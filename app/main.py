@@ -1,23 +1,33 @@
-from fastapi import Depends, FastAPI
+# app/main.py
 
-from .dependencies import get_query_token, get_token_header
-from .internal import admin
-from .routers import items, users
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app import routes
 
-app = FastAPI(dependencies=[Depends(get_query_token)])
-
-
-app.include_router(users.router)
-app.include_router(items.router)
-app.include_router(
-    admin.router,
-    prefix="/admin",
-    tags=["admin"],
-    dependencies=[Depends(get_token_header)],
-    responses={418: {"description": "I'm a teapot"}},
+# Initialize FastAPI
+app = FastAPI(
+    title="Creative Automation Pipeline",
+    description="Automated campaign creative generator",
+    version="0.1.0",
 )
 
+# Optional: allow local frontend / demo tools
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # lock down in prod
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Root health check
 @app.get("/")
-async def root():
-    return {"message": "Hello Bigger Applications!"}
+def read_root():
+    return {
+        "status": "ok",
+        "message": "Creative Automation Pipeline is running",
+        "endpoints": ["/campaigns/generate"]
+    }
+
+# Include campaign routes
+app.include_router(routes.router, prefix="/campaigns", tags=["campaigns"])

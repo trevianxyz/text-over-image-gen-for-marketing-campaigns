@@ -1,14 +1,28 @@
 # app/main.py
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app import routes
+from app.services.logging_db import init_db, close_db
 
-# Initialize FastAPI
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan events"""
+    # Startup
+    print("🚀 Starting up Creative Automation Pipeline...")
+    init_db()
+    yield
+    # Shutdown
+    print("🛑 Shutting down Creative Automation Pipeline...")
+    close_db()
+
+# Initialize FastAPI with lifespan
 app = FastAPI(
     title="Creative Automation Pipeline",
     description="Automated campaign creative generator",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Optional: allow local frontend / demo tools

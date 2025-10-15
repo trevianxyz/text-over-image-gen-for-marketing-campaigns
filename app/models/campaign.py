@@ -25,8 +25,8 @@ class Audience(BaseModel):
    
 
 class CampaignBrief(BaseModel):
-    products: List[str]
-    region: str   # country name (e.g. "France", "Japan")
+    products: List[str] = ["construction boots", "work jacket"]
+    region: str = "Costa Rica"
     audience: Audience
     message: str
     assets: Optional[List[str]] = None #previous image 

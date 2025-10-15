@@ -1,0 +1,16 @@
+[
+  {
+    "file": "assets/inputs/bright-workshop.png",
+    "description": "A futuristic industrial workshop with rainbow-colored arches and natural light streaming through a tall window. Engineers in blue helmets work at desks with computers, robotics equipment, and charts, representing advanced manufacturing and organized training in a bright, modern space."
+  },
+  {
+    "file": "/assets/inputs/mobile-training.png",
+    "description": "A stylized industrial worker in a yellow-toned background holds and studies a mobile device. The artwork blends geometric lines, technical diagrams, and a bold color palette, symbolizing mobile training, field operations, and the intersection of manual labor with digital technology."
+  },
+    "region": "Artic Circle"
+  {
+    "file": "/assets/inputs/tech-enabled-workforce.png",
+    "description": "Two engineers wearing hard hats stand side by side, one male and one female, with laptops and digital overlays of circuits and holographic patterns. The scene conveys a technology-enabled workforce, blending human expertise with digital augmentation in an advanced industrial environment."
+  }, 
+  "region": "Latin America"
+]

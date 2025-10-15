@@ -15,10 +15,13 @@ def generate_campaign(brief: CampaignBrief):
     # Store embeddings
     embed_and_store(campaign_id, brief.message, brief.model_dump())
 
-    # TODO: find base image (mock: just use a placeholder)
-    base_image = "assets/input/sample.png"
-
-    outputs = generate_creatives(base_image, brief.message, f"assets/output/{campaign_id}")
+    # Generate creatives for different aspect ratios
+    prompt = f"{brief.message} for {brief.audience} in {brief.region}"
+    outputs = {
+        "1:1": generate_creatives(prompt, width=1024, height=1024),    # Square
+        "16:9": generate_creatives(prompt, width=1024, height=576),    # Landscape
+        "9:16": generate_creatives(prompt, width=576, height=1024),    # Portrait
+    }
 
     # Compliance
     compliance = check_compliance(brief.message)

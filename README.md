@@ -24,6 +24,14 @@ docker build -t adobe-fastapi-app .
 docker run -d -p 8000:80 --name adobe-fastapi-container adobe-fastapi-app
 ```
 
+confirm with curl
+
+```bash
+curl http://localhost:8080/
+# Response:
+# {"status":"ok","message":"Creative Automation Pipeline is running","endpoints":["/campaigns/generate"]}
+```
+
 API Endpoint: http://localhost:8080/
 Interactive Docs: http://localhost:8080/docs
 OpenAPI Spec: http://localhost:8080/openapi.json

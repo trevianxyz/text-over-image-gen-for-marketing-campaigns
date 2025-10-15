@@ -21,7 +21,11 @@ docker build -t adobe-fastapi-app .
 ```
 
 ```bash
-docker run -d -p 8000:80 --name adobe-fastapi-container adobe-fastapi-app
+# Run with volume mounts for persistent asset storage
+docker run -d -p 8080:80 --name adobe-fastapi-container \
+  -v "$(pwd)/assets:/app/assets" \
+  $([ -f .env ] && echo "-v $(pwd)/.env:/app/.env" || echo "") \
+  adobe-fastapi-app
 ```
 
 confirm with curl
@@ -35,6 +39,33 @@ curl http://localhost:8080/
 API Endpoint: http://localhost:8080/
 Interactive Docs: http://localhost:8080/docs
 OpenAPI Spec: http://localhost:8080/openapi.json
+
+## 📁 Asset Storage Locations
+
+Generated images and data are stored in the following locations:
+
+### Generated Images
+- **Host Machine**: `./assets/generated/`
+- **Container**: `/app/assets/generated/`
+- **Naming**: `gen_{process_id}_{width}x{height}.png`
+
+Example output from API:
+```json
+{
+  "campaign_id": "b79ad02a-3ce1-4ae9-b7d4-042926b4dd74",
+  "outputs": {
+    "1:1": "assets/generated/gen_123_1024x1024.png",
+    "16:9": "assets/generated/gen_123_1024x576.png",
+    "9:16": "assets/generated/gen_123_576x1024.png"
+  }
+}
+```
+
+### ChromaDB Vector Database
+- **Container**: `/app/db/chroma/`
+- Stores campaign embeddings for similarity search
+
+**Note**: The volume mount ensures generated images persist on your host machine and survive container restarts.
 
 ### troubleshooting
 

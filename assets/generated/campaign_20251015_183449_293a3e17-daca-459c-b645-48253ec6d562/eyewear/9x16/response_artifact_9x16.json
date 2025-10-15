@@ -1,0 +1,33 @@
+{
+  "campaign_id": "293a3e17-daca-459c-b645-48253ec6d562",
+  "timestamp": "20251015_183449",
+  "product": "eyewear",
+  "aspect_ratio": "9:16",
+  "request": {
+    "products": [
+      "gloves",
+      "eyewear"
+    ],
+    "region": "MX",
+    "audience": "gen_x",
+    "message": "Stay safe. Be you. ",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "293a3e17-daca-459c-b645-48253ec6d562",
+    "product": "eyewear",
+    "aspect_ratio": "9:16",
+    "image_path": "assets/generated/campaign_20251015_183449_293a3e17-daca-459c-b645-48253ec6d562/eyewear/9x16/image_9x16.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T18:35:26.382862",
+    "campaign_directory": "assets/generated/campaign_20251015_183449_293a3e17-daca-459c-b645-48253ec6d562",
+    "product_directory": "assets/generated/campaign_20251015_183449_293a3e17-daca-459c-b645-48253ec6d562/eyewear",
+    "size_directory": "assets/generated/campaign_20251015_183449_293a3e17-daca-459c-b645-48253ec6d562/eyewear/9x16"
+  }
+}

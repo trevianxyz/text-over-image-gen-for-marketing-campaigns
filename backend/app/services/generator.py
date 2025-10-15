@@ -27,10 +27,24 @@ BRAND_IMAGE_PATH = Path("frontend/images/werkr_brand_image.png")
 BRAND_OVERLAY_SIZE = (200, 200)  # Size of brand overlay
 BRAND_POSITION = "bottom_right"  # Position of brand overlay
 
+# RTL (Right-to-Left) language codes
+RTL_LANGUAGES = {
+    'ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ku', 'dv'  # Arabic, Hebrew, Persian, Urdu, Pashto, Sindhi, Kurdish, Dhivehi
+}
 
-def translate_message_with_llm(message: str, region: str) -> str:
+def is_rtl_language(language_code: str) -> bool:
+    """Check if a language code represents an RTL language"""
+    return language_code.lower() in RTL_LANGUAGES
+
+def get_text_direction(language_code: str) -> str:
+    """Get text direction for a language"""
+    return 'rtl' if is_rtl_language(language_code) else 'ltr'
+
+
+def translate_message_with_llm(message: str, region: str, audience: str = None) -> str:
     """
-    Use LLM to translate the message into the native language of the region.
+    Use LLM to translate the message into the native language of the region,
+    considering the target audience for better cultural adaptation.
     """
     from .country_language import get_legacy_region_mapping, get_primary_language
     
@@ -43,25 +57,42 @@ def translate_message_with_llm(message: str, region: str) -> str:
 
     try:
         client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        # Build audience context for better translation
+        audience_context = ""
+        if audience:
+            # Get audience details from the audience selector service
+            from .audience_selector import get_audience_by_id
+            audience_info = get_audience_by_id(audience)
+            if audience_info:
+                audience_context = f"Target audience: {audience_info.label} - {audience_info.description}. "
+                if audience_info.interests:
+                    audience_context += f"Key interests: {', '.join(audience_info.interests)}. "
+                if audience_info.age_group:
+                    audience_context += f"Age group: {audience_info.age_group.value}. "
+                if audience_info.gender:
+                    audience_context += f"Gender: {audience_info.gender.value}. "
+
+        system_prompt = f"""Translate the following marketing message for the workwear brand Werkr into {target_language}, considering the cultural nuances and preferences of the target audience in {country_code}: {audience_context}. Keep it concise and impactful for advertising. Return the translation in {target_language}, no explanations. Include the English translation in the translation as a subtitle to the translation."""
 
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {
                     "role": "system", 
-                    "content": f"Translate the following marketing message into {target_language}. Keep it concise and impactful for advertising. Return only the translation, no explanations."
+                    "content": system_prompt
                 },
                 {
                     "role": "user",
                     "content": message
                 }
             ],
-            max_tokens=100,
+            max_tokens=150,
             temperature=0.3
         )
 
         translated_message = response.choices[0].message.content.strip()
-        print(f"🌍 Translated '{message}' to {target_language}: '{translated_message}'")
+        print(f"🌍 Translated '{message}' to {target_language} for audience '{audience}': '{translated_message}'")
         return translated_message
 
     except Exception as e:
@@ -89,12 +120,12 @@ def localize_prompt(prompt: str, region: str) -> str:
     return f"{prompt}, {localized_context}"
 
 
-def add_brand_overlay(image_path: str, product: str, region: str, message: str) -> str:
+def add_brand_overlay(image_path: str, product: str, region: str, message: str, audience: str = None) -> str:
     """
     Add brand overlay, localized text, and translated message to the image.
     """
     # Translate the message to the region's native language
-    translated_message = translate_message_with_llm(message, region)
+    translated_message = translate_message_with_llm(message, region, audience)
 
     # Load the main image
     with Image.open(image_path) as img:
@@ -127,20 +158,53 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str) 
         # Add text overlays
         draw = ImageDraw.Draw(img)
 
-        # Try to load a font, fallback to default if not available
-        try:
-            font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
-            font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
-        except:
+        # Try to load fonts that support international text (RTL, non-Latin scripts)
+        font_large = None
+        font_small = None
+        
+        # List of fonts to try in order of preference (international support)
+        font_paths = [
+            # System fonts with international support
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",  # macOS
+            "/System/Library/Fonts/Arial.ttf",      # macOS
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ]
+        
+        for font_path in font_paths:
+            try:
+                if os.path.exists(font_path):
+                    font_large = ImageFont.truetype(font_path, 28)
+                    font_small = ImageFont.truetype(font_path, 20)
+                    print(f"✅ Using font: {font_path}")
+                    break
+            except Exception as e:
+                print(f"⚠️ Font {font_path} failed: {e}")
+                continue
+        
+        # Final fallback to default font
+        if not font_large:
             try:
                 font_large = ImageFont.load_default()
                 font_small = ImageFont.load_default()
+                print("⚠️ Using default font (limited international support)")
             except:
                 font_large = None
                 font_small = None
+                print("❌ No fonts available")
 
         # 1. Add translated message (main text) in bottom right
         if translated_message:
+            # Get language direction for proper positioning
+            from .country_language import get_legacy_region_mapping, get_primary_language
+            country_code = get_legacy_region_mapping(region) or region
+            language_code = get_primary_language(country_code)
+            is_rtl = is_rtl_language(language_code)
+            
             # Calculate position for translated message (bottom right, above brand)
             if font_large:
                 bbox = draw.textbbox((0, 0), translated_message, font=font_large)
@@ -150,8 +214,14 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str) 
                 msg_width = len(translated_message) * 12
                 msg_height = 24
 
-            # Position message in bottom right, above brand logo
-            msg_x = img.width - msg_width - 30
+            # Position message - adjust for RTL languages
+            if is_rtl:
+                # For RTL languages, position from the right edge
+                msg_x = img.width - msg_width - 30
+            else:
+                # For LTR languages, position from the right edge
+                msg_x = img.width - msg_width - 30
+                
             msg_y = img.height - msg_height - 80 if BRAND_IMAGE_PATH.exists() else img.height - msg_height - 30
 
             # Add message with outline for visibility
@@ -166,6 +236,8 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str) 
 
             # Draw main text
             draw.text((msg_x, msg_y), translated_message, font=font_large, fill=text_color)
+            
+            print(f"🌍 Text direction: {'RTL' if is_rtl else 'LTR'} for language {language_code}")
 
         # 2. Add region branding text (smaller, above brand logo)
         from .country_language import get_legacy_region_mapping, get_country_by_code
@@ -310,7 +382,7 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, region: s
     return str(base_image_path)
 
 
-def create_size_variants(base_image_path: str, campaign_id: str, product: str, region: str, message: str, campaign_dir: Optional[Path] = None) -> dict:
+def create_size_variants(base_image_path: str, campaign_id: str, product: str, region: str, message: str, campaign_dir: Optional[Path] = None, audience: str = None) -> dict:
     """
     Create 3 size variants (1:1, 16:9, 9:16) from a base image.
     Uses smart cropping to maintain aspect ratio and image quality.
@@ -353,7 +425,7 @@ def create_size_variants(base_image_path: str, campaign_id: str, product: str, r
             resized_img.save(image_path, "PNG", quality=95)
 
             # Add brand overlay, localization, and translated message
-            final_image_path = add_brand_overlay(str(image_path), product, region, message)
+            final_image_path = add_brand_overlay(str(image_path), product, region, message, audience)
             outputs[aspect_ratio] = final_image_path
             print(f"📐 Created {aspect_ratio} variant for {product}: {final_image_path}")
 
@@ -397,6 +469,7 @@ def generate_creatives(
     region: Optional[str] = None,
     message: Optional[str] = None,
     campaign_dir: Optional[Path] = None,
+    audience: Optional[str] = None,
 ) -> dict:
     """
     Generate one image and create 3 size variants for a specific product.
@@ -416,7 +489,7 @@ def generate_creatives(
     base_image_path = generate_single_image(prompt, campaign_id, product, region, campaign_dir)
 
     # Create size variants for this product
-    outputs = create_size_variants(base_image_path, campaign_id, product, region, message, campaign_dir)
+    outputs = create_size_variants(base_image_path, campaign_id, product, region, message, campaign_dir, audience)
 
     return outputs
 

@@ -1,0 +1,33 @@
+{
+  "campaign_id": "998e35a6-7d55-4dd3-b819-72ff93192a02",
+  "timestamp": "20251015_182203",
+  "product": "gloves",
+  "aspect_ratio": "16:9",
+  "request": {
+    "products": [
+      "gloves",
+      "scarves"
+    ],
+    "region": "IQ",
+    "audience": "young_adults",
+    "message": "shik urban ware ",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "998e35a6-7d55-4dd3-b819-72ff93192a02",
+    "product": "gloves",
+    "aspect_ratio": "16:9",
+    "image_path": "assets/generated/campaign_20251015_182203_998e35a6-7d55-4dd3-b819-72ff93192a02/gloves/16x9/image_16x9.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T18:22:19.746908",
+    "campaign_directory": "assets/generated/campaign_20251015_182203_998e35a6-7d55-4dd3-b819-72ff93192a02",
+    "product_directory": "assets/generated/campaign_20251015_182203_998e35a6-7d55-4dd3-b819-72ff93192a02/gloves",
+    "size_directory": "assets/generated/campaign_20251015_182203_998e35a6-7d55-4dd3-b819-72ff93192a02/gloves/16x9"
+  }
+}

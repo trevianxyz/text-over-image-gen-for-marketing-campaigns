@@ -1,0 +1,33 @@
+{
+  "campaign_id": "7618f882-4fbe-4feb-8b19-80cf65eff917",
+  "timestamp": "20251015_175300",
+  "product": "boots",
+  "aspect_ratio": "9:16",
+  "request": {
+    "products": [
+      "boots",
+      "eyewear"
+    ],
+    "region": "FR",
+    "audience": "elderly",
+    "message": "lunar construction ",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "7618f882-4fbe-4feb-8b19-80cf65eff917",
+    "product": "boots",
+    "aspect_ratio": "9:16",
+    "image_path": "assets/generated/campaign_20251015_175300_7618f882-4fbe-4feb-8b19-80cf65eff917/boots/9x16/image_9x16.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T17:53:14.335404",
+    "campaign_directory": "assets/generated/campaign_20251015_175300_7618f882-4fbe-4feb-8b19-80cf65eff917",
+    "product_directory": "assets/generated/campaign_20251015_175300_7618f882-4fbe-4feb-8b19-80cf65eff917/boots",
+    "size_directory": "assets/generated/campaign_20251015_175300_7618f882-4fbe-4feb-8b19-80cf65eff917/boots/9x16"
+  }
+}

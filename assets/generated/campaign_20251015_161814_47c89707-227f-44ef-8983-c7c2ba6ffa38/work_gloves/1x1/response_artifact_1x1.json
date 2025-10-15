@@ -1,0 +1,33 @@
+{
+  "campaign_id": "47c89707-227f-44ef-8983-c7c2ba6ffa38",
+  "timestamp": "20251015_161814",
+  "product": "Work gloves",
+  "aspect_ratio": "1:1",
+  "request": {
+    "products": [
+      "Work gloves",
+      "hard hat"
+    ],
+    "region": "Spain",
+    "audience": "grandparents",
+    "message": "A grandparent of construction workers pleading with their grandchildren to wear Werkr brand apparel. ",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "47c89707-227f-44ef-8983-c7c2ba6ffa38",
+    "product": "Work gloves",
+    "aspect_ratio": "1:1",
+    "image_path": "assets/generated/campaign_20251015_161814_47c89707-227f-44ef-8983-c7c2ba6ffa38/work_gloves/1x1/image_1x1.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T16:18:30.995926",
+    "campaign_directory": "assets/generated/campaign_20251015_161814_47c89707-227f-44ef-8983-c7c2ba6ffa38",
+    "product_directory": "assets/generated/campaign_20251015_161814_47c89707-227f-44ef-8983-c7c2ba6ffa38/work_gloves",
+    "size_directory": "assets/generated/campaign_20251015_161814_47c89707-227f-44ef-8983-c7c2ba6ffa38/work_gloves/1x1"
+  }
+}

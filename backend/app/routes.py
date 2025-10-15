@@ -30,7 +30,7 @@ def generate_campaign(brief: CampaignBrief):
     
     for product in brief.products:
         print(f"🎨 Generating creatives for product: {product}")
-        product_outputs = generate_creatives(prompt, campaign_id=campaign_id, product=product, region=brief.region, message=brief.message, campaign_dir=campaign_dir)
+        product_outputs = generate_creatives(prompt, campaign_id=campaign_id, product=product, region=brief.region, message=brief.message, campaign_dir=campaign_dir, audience=brief.audience)
         all_outputs[product] = product_outputs
         
         # Create individual artifacts for each size variant

@@ -1,0 +1,32 @@
+{
+  "campaign_id": "07a9d67a-30e6-463b-b0ad-269142bf0068",
+  "timestamp": "20251015_180350",
+  "product": "hats",
+  "aspect_ratio": "9:16",
+  "request": {
+    "products": [
+      "hats"
+    ],
+    "region": "PH",
+    "audience": "boomers",
+    "message": "Lunar fashion",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "07a9d67a-30e6-463b-b0ad-269142bf0068",
+    "product": "hats",
+    "aspect_ratio": "9:16",
+    "image_path": "assets/generated/campaign_20251015_180350_07a9d67a-30e6-463b-b0ad-269142bf0068/hats/9x16/image_9x16.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T18:04:09.135852",
+    "campaign_directory": "assets/generated/campaign_20251015_180350_07a9d67a-30e6-463b-b0ad-269142bf0068",
+    "product_directory": "assets/generated/campaign_20251015_180350_07a9d67a-30e6-463b-b0ad-269142bf0068/hats",
+    "size_directory": "assets/generated/campaign_20251015_180350_07a9d67a-30e6-463b-b0ad-269142bf0068/hats/9x16"
+  }
+}

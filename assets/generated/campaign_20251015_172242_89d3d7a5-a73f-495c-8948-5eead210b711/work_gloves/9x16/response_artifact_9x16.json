@@ -1,0 +1,33 @@
+{
+  "campaign_id": "89d3d7a5-a73f-495c-8948-5eead210b711",
+  "timestamp": "20251015_172242",
+  "product": "Work gloves",
+  "aspect_ratio": "9:16",
+  "request": {
+    "products": [
+      "Work gloves",
+      "hard hat"
+    ],
+    "region": "Costa Rica",
+    "audience": "construction labor",
+    "message": "industrial gardeners who work on the facades of skyscrapers\n",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "89d3d7a5-a73f-495c-8948-5eead210b711",
+    "product": "Work gloves",
+    "aspect_ratio": "9:16",
+    "image_path": "assets/generated/campaign_20251015_172242_89d3d7a5-a73f-495c-8948-5eead210b711/work_gloves/9x16/image_9x16.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T17:22:58.930860",
+    "campaign_directory": "assets/generated/campaign_20251015_172242_89d3d7a5-a73f-495c-8948-5eead210b711",
+    "product_directory": "assets/generated/campaign_20251015_172242_89d3d7a5-a73f-495c-8948-5eead210b711/work_gloves",
+    "size_directory": "assets/generated/campaign_20251015_172242_89d3d7a5-a73f-495c-8948-5eead210b711/work_gloves/9x16"
+  }
+}

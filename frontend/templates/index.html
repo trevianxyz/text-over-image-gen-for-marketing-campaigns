@@ -5,7 +5,13 @@
 {% block content %}
 <div class="hero">
     <h2>Generate Campaign Creatives</h2>
-    <p>AI-powered image generation for your marketing campaigns</p>
+    <p>AI-powered image generation for Werkr marketing campaigns</p>
+    <div style="margin-top: 1.5rem;">
+        <img src="{{ url_for('assets', path='werkr_brand_image.png') }}" alt="Werkr Logo" style="height:64px;">
+    </div>
+    <div style="margin-top: 1rem; color: green; font-weight: bold;">
+        [CONFIRMATION: This message is displaying on frontend]
+    </div>
 </div>
 
 <div class="form-container">
@@ -19,36 +25,35 @@
 
         <div class="form-row">
         <div class="form-group">
-            <label for="region">Region *</label>
-            <select id="region" name="region" required>
-                <option value="">Select Region</option>
-                <option value="California">California</option>
-                <option value="Texas">Texas</option>
-                <option value="Nevada">Nevada</option>
-                <option value="New York">New York</option>
-                <option value="Florida">Florida</option>
-                <option value="Costa Rica">Costa Rica</option>
-                <option value="Mexico">Mexico</option>
-                <option value="Canada">Canada</option>
-                <option value="UK">United Kingdom</option>
-                <option value="Germany">Germany</option>
-                <option value="France">France</option>
-                <option value="Japan">Japan</option>
-                <option value="Australia">Australia</option>
-                <option value="Brazil">Brazil</option>
-                <option value="Italy">Italy</option>
-                <option value="Spain">Spain</option>
-                <option value="China">China</option>
-                <option value="India">India</option>
-                <option value="South Korea">South Korea</option>
-                <option value="Russia">Russia</option>
-            </select>
+            <label for="region">Country/Region *</label>
+            <div class="country-selector">
+                <input type="text" id="regionSearch" placeholder="Search countries..." autocomplete="off">
+                <div id="regionDropdown" class="country-dropdown" style="display: none;">
+                    <!-- Countries will be loaded dynamically -->
+                </div>
+                <input type="hidden" id="region" name="region" required>
+                <div id="selectedCountry" class="selected-country" style="display: none;">
+                    <span id="selectedCountryName"></span>
+                    <button type="button" id="clearCountry" class="clear-btn">×</button>
+                </div>
+            </div>
+            <small>Start typing to search countries</small>
         </div>
 
             <div class="form-group">
                 <label for="audience">Target Audience *</label>
-                <input type="text" id="audience" name="audience" 
-                       placeholder="e.g., Athletes and fitness enthusiasts" required>
+                <div class="audience-selector">
+                    <input type="text" id="audienceSearch" placeholder="Search audiences..." autocomplete="off">
+                    <div id="audienceDropdown" class="audience-dropdown" style="display: none;">
+                        <!-- Audiences will be loaded dynamically -->
+                    </div>
+                    <input type="hidden" id="audience" name="audience" required>
+                    <div id="selectedAudience" class="selected-audience" style="display: none;">
+                        <span id="selectedAudienceName"></span>
+                        <button type="button" id="clearAudience" class="clear-btn">×</button>
+                    </div>
+                </div>
+                <small>Start typing to search audiences</small>
             </div>
         </div>
 

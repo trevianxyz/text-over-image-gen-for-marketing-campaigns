@@ -2210,6 +2210,7 @@ dependencies = [
     { name = "duckdb" },
     { name = "fastapi", extra = ["standard"] },
     { name = "openai" },
+    { name = "pillow" },
     { name = "python-dotenv" },
     { name = "sentence-transformers" },
 ]
@@ -2220,6 +2221,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.4.1" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.112.1" },
     { name = "openai", specifier = ">=2.3.0" },
+    { name = "pillow", specifier = ">=10.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentence-transformers", specifier = ">=5.1.1" },
 ]

@@ -41,17 +41,50 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         
         const result = await response.json();
         
-        // Display results
+        // Display campaign info
         document.getElementById('campaignId').textContent = result.campaign_id;
         
         const complianceStatus = document.getElementById('complianceStatus');
         complianceStatus.textContent = result.compliance.status;
         complianceStatus.className = result.compliance.status.toLowerCase();
         
-        // Load images
-        document.getElementById('img11').src = `/${result.outputs['1:1']}`;
-        document.getElementById('img169').src = `/${result.outputs['16:9']}`;
-        document.getElementById('img916').src = `/${result.outputs['9:16']}`;
+        // Display campaign details
+        document.getElementById('productCount').textContent = data.products.length;
+        document.getElementById('campaignRegion').textContent = data.region;
+        document.getElementById('campaignMessage').textContent = data.message;
+        
+        // Create product containers dynamically
+        const productsContainer = document.getElementById('productsContainer');
+        productsContainer.innerHTML = '';
+        
+        // For now, show the first product's images (API returns first product's outputs)
+        // In a full implementation, you'd want to modify the API to return all products
+        const productName = data.products[0] || 'Product';
+        
+        const productDiv = document.createElement('div');
+        productDiv.className = 'product-section';
+        productDiv.innerHTML = `
+            <h4>${productName}</h4>
+            <div class="image-grid">
+                <div class="image-card">
+                    <h5>Square (1:1)</h5>
+                    <img src="/${result.outputs['1:1']}" alt="Square format" loading="lazy">
+                    <p class="image-size">1024 x 1024</p>
+                </div>
+                <div class="image-card">
+                    <h5>Landscape (16:9)</h5>
+                    <img src="/${result.outputs['16:9']}" alt="Landscape format" loading="lazy">
+                    <p class="image-size">1024 x 576</p>
+                </div>
+                <div class="image-card">
+                    <h5>Portrait (9:16)</h5>
+                    <img src="/${result.outputs['9:16']}" alt="Portrait format" loading="lazy">
+                    <p class="image-size">576 x 1024</p>
+                </div>
+            </div>
+        `;
+        
+        productsContainer.appendChild(productDiv);
         
         // Show results
         form.style.display = 'none';

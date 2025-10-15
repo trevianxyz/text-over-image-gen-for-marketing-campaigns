@@ -240,6 +240,61 @@ footer {
     margin-top: 4rem;
 }
 
+/* Product sections */
+.product-section {
+    margin-bottom: 3rem;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-section h4 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text);
+    font-size: 1.3rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.image-card {
+    background: var(--bg);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.image-card h5 {
+    margin: 0 0 1rem 0;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+.image-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 1rem 0;
+    border: 2px solid var(--border);
+}
+
+.image-card img:hover {
+    border-color: var(--primary);
+}
+
+.image-size {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;

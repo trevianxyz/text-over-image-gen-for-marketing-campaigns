@@ -9,6 +9,7 @@ dependencies = [
     "duckdb>=1.4.1",
     "fastapi[standard]>=0.112.1",
     "openai>=2.3.0",
+    "pillow>=10.0.0",
     "python-dotenv>=1.0.1",
     "sentence-transformers>=5.1.1",
 ]

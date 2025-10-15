@@ -18,18 +18,32 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group">
-                <label for="region">Region *</label>
-                <select id="region" name="region" required>
-                    <option value="">Select Region</option>
-                    <option value="North America">North America</option>
-                    <option value="Europe">Europe</option>
-                    <option value="Asia Pacific">Asia Pacific</option>
-                    <option value="Latin America">Latin America</option>
-                    <option value="Middle East & Africa">Middle East & Africa</option>
-                    <option value="Global">Global</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="region">Region *</label>
+            <select id="region" name="region" required>
+                <option value="">Select Region</option>
+                <option value="California">California</option>
+                <option value="Texas">Texas</option>
+                <option value="Nevada">Nevada</option>
+                <option value="New York">New York</option>
+                <option value="Florida">Florida</option>
+                <option value="Costa Rica">Costa Rica</option>
+                <option value="Mexico">Mexico</option>
+                <option value="Canada">Canada</option>
+                <option value="UK">United Kingdom</option>
+                <option value="Germany">Germany</option>
+                <option value="France">France</option>
+                <option value="Japan">Japan</option>
+                <option value="Australia">Australia</option>
+                <option value="Brazil">Brazil</option>
+                <option value="Italy">Italy</option>
+                <option value="Spain">Spain</option>
+                <option value="China">China</option>
+                <option value="India">India</option>
+                <option value="South Korea">South Korea</option>
+                <option value="Russia">Russia</option>
+            </select>
+        </div>
 
             <div class="form-group">
                 <label for="audience">Target Audience *</label>
@@ -58,24 +72,13 @@
     <div class="campaign-info">
         <p><strong>Campaign ID:</strong> <code id="campaignId"></code></p>
         <p><strong>Compliance:</strong> <span id="complianceStatus"></span></p>
+        <p><strong>Products:</strong> <span id="productCount"></span></p>
+        <p><strong>Region:</strong> <span id="campaignRegion"></span></p>
+        <p><strong>Message:</strong> <span id="campaignMessage"></span></p>
     </div>
 
-    <div class="image-grid">
-        <div class="image-card">
-            <h4>Square (1:1)</h4>
-            <img id="img11" src="" alt="Square format">
-            <p class="image-size">1024 x 1024</p>
-        </div>
-        <div class="image-card">
-            <h4>Landscape (16:9)</h4>
-            <img id="img169" src="" alt="Landscape format">
-            <p class="image-size">1024 x 576</p>
-        </div>
-        <div class="image-card">
-            <h4>Portrait (9:16)</h4>
-            <img id="img916" src="" alt="Portrait format">
-            <p class="image-size">576 x 1024</p>
-        </div>
+    <div id="productsContainer">
+        <!-- Products will be dynamically added here -->
     </div>
 
     <button onclick="location.reload()" class="btn-secondary">Generate Another</button>

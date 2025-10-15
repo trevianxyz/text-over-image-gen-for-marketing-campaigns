@@ -1,0 +1,33 @@
+{
+  "campaign_id": "c77e281c-02d2-4505-8094-3167286dbf60",
+  "timestamp": "20251015_153620",
+  "product": "hard hat",
+  "aspect_ratio": "16:9",
+  "request": {
+    "products": [
+      "Work gloves",
+      "hard hat"
+    ],
+    "region": "India",
+    "audience": "construction labor",
+    "message": "construction on the lunar surface",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "c77e281c-02d2-4505-8094-3167286dbf60",
+    "product": "hard hat",
+    "aspect_ratio": "16:9",
+    "image_path": "assets/generated/campaign_20251015_153636_c77e281c-02d2-4505-8094-3167286dbf60/hard_hat/16x9/image_16x9.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T15:36:52.964380",
+    "campaign_directory": "assets/generated/campaign_20251015_153620_c77e281c-02d2-4505-8094-3167286dbf60",
+    "product_directory": "assets/generated/campaign_20251015_153636_c77e281c-02d2-4505-8094-3167286dbf60/hard_hat",
+    "size_directory": "assets/generated/campaign_20251015_153636_c77e281c-02d2-4505-8094-3167286dbf60/hard_hat/16x9"
+  }
+}

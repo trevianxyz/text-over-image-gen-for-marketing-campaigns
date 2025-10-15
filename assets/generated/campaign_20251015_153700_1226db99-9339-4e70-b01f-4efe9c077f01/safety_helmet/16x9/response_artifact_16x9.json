@@ -1,0 +1,32 @@
+{
+  "campaign_id": "1226db99-9339-4e70-b01f-4efe9c077f01",
+  "timestamp": "20251015_153700",
+  "product": "safety helmet",
+  "aspect_ratio": "16:9",
+  "request": {
+    "products": [
+      "safety helmet"
+    ],
+    "region": "Mexico",
+    "audience": "workers",
+    "message": "Safety first",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "1226db99-9339-4e70-b01f-4efe9c077f01",
+    "product": "safety helmet",
+    "aspect_ratio": "16:9",
+    "image_path": "assets/generated/campaign_20251015_153700_1226db99-9339-4e70-b01f-4efe9c077f01/safety_helmet/16x9/image_16x9.png",
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T15:37:14.638587",
+    "campaign_directory": "assets/generated/campaign_20251015_153700_1226db99-9339-4e70-b01f-4efe9c077f01",
+    "product_directory": "assets/generated/campaign_20251015_153700_1226db99-9339-4e70-b01f-4efe9c077f01/safety_helmet",
+    "size_directory": "assets/generated/campaign_20251015_153700_1226db99-9339-4e70-b01f-4efe9c077f01/safety_helmet/16x9"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "campaign_id": "c582b46e-ee7b-4d86-859b-1e5f7b6f80c5",
+  "timestamp": "20251015_145416",
+  "request": {
+    "products": [
+      "safety helmet",
+      "work boots"
+    ],
+    "region": "Texas",
+    "audience": "construction workers",
+    "message": "Premium safety gear for professional construction",
+    "assets": null
+  },
+  "response": {
+    "campaign_id": "c582b46e-ee7b-4d86-859b-1e5f7b6f80c5",
+    "outputs": {
+      "1:1": "assets/generated/campaign_20251015_145416_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_1024x1024.png",
+      "16:9": "assets/generated/campaign_20251015_145426_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_1024x576.png",
+      "9:16": "assets/generated/campaign_20251015_145433_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_576x1024.png"
+    },
+    "compliance": {
+      "status": "approved",
+      "issues": [],
+      "message": "No compliance issues detected"
+    }
+  },
+  "metadata": {
+    "generated_at": "2025-10-15T14:54:39.479153",
+    "campaign_directory": "assets/generated/campaign_20251015_145416_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5",
+    "image_files": [
+      "assets/generated/campaign_20251015_145416_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_1024x1024.png",
+      "assets/generated/campaign_20251015_145426_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_1024x576.png",
+      "assets/generated/campaign_20251015_145433_c582b46e-ee7b-4d86-859b-1e5f7b6f80c5/image_576x1024.png"
+    ]
+  }
+}

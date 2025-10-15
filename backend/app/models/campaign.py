@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 
-
 from enum import Enum
 
 class AgeGroup(str, Enum):
@@ -25,19 +24,13 @@ class Audience(BaseModel):
    
 
 class CampaignBrief(BaseModel):
-    products: List[str] = ["construction boots", "work jacket"]
-    region: str = "Costa Rica"
-    audience: Audience
+    products: List[str]
+    region: str
+    audience: str  # Keep as string for compatibility with existing code
     message: str
-    assets: Optional[List[str]] = None #previous image 
+    assets: Optional[List[str]] = None
 
 class GenerationResult(BaseModel):
-    """
-    Model for generation results, storing for each aspect ratio the filepath for the same image.
-    """
-    campaign_id: str
-    outputs: Dict[str, str]   # each aspect_ratio → the filepath for the same image
-    compliance: Optional[Dict] = None
     campaign_id: str
     outputs: Dict[str, str]   # aspect_ratio → file path
-d
+    compliance: Optional[Dict] = None

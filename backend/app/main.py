@@ -1,8 +1,10 @@
 # app/main.py
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from app import routes
 from app.services.logging_db import init_db, close_db
 
@@ -25,6 +27,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Mount static files and templates
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+templates = Jinja2Templates(directory="frontend/templates")
+
 # Optional: allow local frontend / demo tools
 app.add_middleware(
     CORSMiddleware,
@@ -34,9 +40,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root health check
+# Root - serve HTML frontend
 @app.get("/")
-def read_root():
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+# Health check API endpoint
+@app.get("/api/health")
+def health_check():
     return {
         "status": "ok",
         "message": "Creative Automation Pipeline is running",

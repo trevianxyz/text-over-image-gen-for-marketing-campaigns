@@ -13,7 +13,7 @@ def generate_campaign(brief: CampaignBrief):
     campaign_id = str(uuid.uuid4())
 
     # Store embeddings
-    embed_and_store(campaign_id, brief.message, brief.dict())
+    embed_and_store(campaign_id, brief.message, brief.model_dump())
 
     # TODO: find base image (mock: just use a placeholder)
     base_image = "assets/input/sample.png"

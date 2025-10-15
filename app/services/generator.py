@@ -15,7 +15,7 @@ OUTPUT_DIR = Path("assets/generated")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def generate_image(prompt: str, width: int = 1024, height: int = 1024) -> str:
+def generate_creatives(prompt: str, width: int = 1024, height: int = 1024) -> str:
     """
     Generate an image from a text prompt using Hugging Face Inference API.
     """
@@ -47,4 +47,4 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024) -> str:
 
 if __name__ == "__main__":
     test_prompt = "a hero image for social ad campaign"
-    generate_image(test_prompt, width=768, height=512)
+    generate_creatives(test_prompt, width=768, height=512)

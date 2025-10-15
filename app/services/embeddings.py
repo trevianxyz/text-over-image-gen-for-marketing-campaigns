@@ -1,6 +1,5 @@
-import chromadb
-from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
+"""Embeddings service - stub implementation"""
+from typing import Any, Dict
 
 # Initialize ChromaDB
 client = chromadb.Client(Settings(persist_directory="db/chroma"))
@@ -13,6 +12,10 @@ def embed_and_store(campaign_id: str, text: str, metadata: dict):
     vec = model.encode(text).tolist()
     collection.add(ids=[campaign_id], embeddings=[vec], metadatas=[metadata], documents=[text])
 
-def search_similar(query: str, top_k=3):
-    vec = model.encode(query).tolist()
-    return collection.query(query_embeddings=[vec], n_results=top_k)
+def search_similar(query: str, top_k: int = 3) -> Dict[str, Any]:
+    """
+    Search for similar campaigns
+    Stub implementation - replace with actual vector search logic
+    """
+    print(f"Searching for similar campaigns to: {query[:50]}...")
+    return {"results": []}

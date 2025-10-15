@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-MODEL = "Qwen/Qwen-Image"   # can replace with "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL = "stabilityai/stable-diffusion-xl-base-1.0"  # Text-to-image model
 BASE_URL = "https://api-inference.huggingface.co"
 
 OUTPUT_DIR = Path("assets/generated")

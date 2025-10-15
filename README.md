@@ -1,65 +1,142 @@
-# Creative Automation Pipeline
+# Creative Automation Pipeline - Developer Setup Guide
 
-A [FastAPI](https://github.com/fastapi/fastapi) application for automated campaign creative generation, managed with [uv](https://github.com/astral-sh/uv).
+## 🚀 Quick Start for New Developers
 
-## Features
+### Prerequisites
 
-- **AI Image Generation** - Generate campaign creatives via Hugging Face API
-- **Vector Search** - ChromaDB for campaign similarity search
-- **Analytics Logging** - DuckDB for campaign tracking and analytics
-- **Compliance Checking** - Automated content validation
-- **Docker Ready** - Containerized with persistent storage
-- **Lifecycle Management** - FastAPI lifespan events for clean startup/shutdown
+- **Docker** (latest version)
+- **Git** (for cloning the repository)
+- **API Keys** (Hugging Face and OpenAI - see setup below)
 
-## Requirements
-
-- Docker
-- `.env` file with `HF_TOKEN` for Hugging Face API (optional for testing)
-
-## Quick Start
-
-### 1. Build the Docker Image
+### 1. Clone and Setup
 
 ```bash
-docker build -t adobe-fastapi-app .
+# Clone the repository
+git clone <repository-url>
+cd for-adobe
+
+# Create environment file
+cp .env.example .env
 ```
 
-### 2. Run the Container
+### 2. Configure API Keys
+
+Edit `.env` file with your API keys:
 
 ```bash
-# Run with volume mounts for persistent storage (assets + DuckDB + ChromaDB)
+# Required: OpenAI API Key (for LLM translation and fallback image generation)
+OPENAI_API_KEY=sk-proj-your-openai-key-here
+
+# Optional: Hugging Face API Key (for primary image generation)
+HF_TOKEN=hf_your-huggingface-token-here
+```
+
+**Get API Keys:**
+
+- **OpenAI**: https://platform.openai.com/api-keys
+- **Hugging Face**: https://huggingface.co/settings/tokens
+
+### 3. Build and Run
+
+```bash
+# Build the Docker image
+docker build -t adobe-fastapi-app .
+
+# Run the container with persistent storage
 docker run -d -p 8080:80 --name adobe-fastapi-container \
   -v "$(pwd)/assets:/app/assets" \
   -v "$(pwd)/db:/app/db" \
-  $([ -f .env ] && echo "-v $(pwd)/.env:/app/.env" || echo "") \
+  -v "$(pwd)/.env:/app/.env" \
   adobe-fastapi-app
 ```
 
-### 3. Verify the API is Running
+### 4. Verify Installation
 
 ```bash
-curl http://localhost:8080/
-# Response:
-# {"status":"ok","message":"Creative Automation Pipeline is running","endpoints":["/campaigns/generate"]}
+# Check container is running
+docker ps --filter name=adobe-fastapi-container
+
+# Test the API
+curl http://localhost:8080/api/health
+
+# Open the web interface
+open http://localhost:8080
 ```
 
-## API Endpoints
+## 🌍 Features Overview
 
-- **API Root**: http://localhost:8080/
-- **Interactive Docs**: http://localhost:8080/docs
-- **OpenAPI Spec**: http://localhost:8080/openapi.json
-- **Generate Campaign**: `POST /campaigns/generate`
+### **AI-Powered Campaign Generation**
 
-### Example API Request
+- **Multi-Product Support**: Generate images for multiple products in one campaign
+- **3 Size Variants**: Square (1:1), Landscape (16:9), Portrait (9:16)
+- **Dual AI Providers**: Hugging Face (primary) + OpenAI DALL-E (fallback)
+- **Smart Fallback**: Automatic failover if primary service is unavailable
+
+### **Localization & Translation**
+
+- **20+ Languages**: Automatic translation to native languages
+- **Cultural Context**: Region-specific prompts for better relevance
+- **Brand Overlay**: Werkr logo with localized text
+- **Supported Regions**: US States, International countries
+
+### **Enterprise Features**
+
+- **Vector Search**: ChromaDB for campaign similarity
+- **Analytics**: DuckDB for campaign tracking
+- **Compliance**: Automated content validation
+- **Persistent Storage**: All data survives container restarts
+
+## 📁 Project Structure
+
+```
+for-adobe/
+├── backend/                    # FastAPI application
+│   └── app/
+│       ├── main.py           # FastAPI app with lifespan events
+│       ├── routes.py         # Campaign generation endpoints
+│       ├── models/           # Pydantic data models
+│       └── services/         # Business logic
+│           ├── generator.py  # AI image generation + localization
+│           ├── embeddings.py # ChromaDB vector search
+│           ├── logging_db.py # DuckDB analytics
+│           └── compliance.py # Content validation
+├── frontend/                  # Web interface
+│   ├── templates/           # Jinja2 HTML templates
+│   └── static/             # CSS, JS, images
+├── assets/                   # Generated content
+│   └── generated/           # Campaign outputs
+├── db/                      # Databases
+│   ├── chroma/             # ChromaDB vector store
+│   └── campaigns.duckdb    # DuckDB analytics
+├── Dockerfile              # Container configuration
+├── pyproject.toml          # Python dependencies
+└── .env                    # API keys (create from .env.example)
+```
+
+## 🎯 Usage Examples
+
+### Web Interface
+
+1. Open http://localhost:8080
+2. Fill out the campaign form:
+   - **Products**: "safety helmet, work boots"
+   - **Region**: "Mexico" (auto-translates to Spanish)
+   - **Audience**: "construction workers"
+   - **Message**: "Professional safety equipment"
+3. Click "Generate Campaign"
+4. View results with translated text and brand overlay
+
+### API Usage
 
 ```bash
+# Generate campaign via API
 curl -X POST http://localhost:8080/campaigns/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "products": ["Running Shoes", "Sportswear"],
-    "region": "North America",
-    "audience": "Athletes and fitness enthusiasts",
-    "message": "Run faster, push harder with our new performance gear"
+    "products": ["safety helmet", "work boots"],
+    "region": "Germany",
+    "audience": "construction workers",
+    "message": "Professional safety equipment"
   }'
 ```
 
@@ -69,9 +146,9 @@ curl -X POST http://localhost:8080/campaigns/generate \
 {
   "campaign_id": "uuid-here",
   "outputs": {
-    "1:1": "assets/generated/gen_123_1024x1024.png",
-    "16:9": "assets/generated/gen_123_1024x576.png",
-    "9:16": "assets/generated/gen_123_576x1024.png"
+    "1:1": "assets/generated/campaign_20251015_153700_uuid/safety_helmet/1x1/image_1x1.png",
+    "16:9": "assets/generated/campaign_20251015_153700_uuid/safety_helmet/16x9/image_16x9.png",
+    "9:16": "assets/generated/campaign_20251015_153700_uuid/safety_helmet/9x16/image_9x16.png"
   },
   "compliance": {
     "status": "approved",
@@ -81,145 +158,208 @@ curl -X POST http://localhost:8080/campaigns/generate \
 }
 ```
 
-## Asset Storage Locations
+## 🔧 Development Workflow
 
-Generated images and data are stored in the following locations:
-
-### Generated Images
-
-- **Host Machine**: `./assets/generated/`
-- **Container**: `/app/assets/generated/`
-- **Naming**: `gen_{process_id}_{width}x{height}.png`
-
-Example output from API:
-
-```json
-{
-  "campaign_id": "b79ad02a-3ce1-4ae9-b7d4-042926b4dd74",
-  "outputs": {
-    "1:1": "assets/generated/gen_123_1024x1024.png",
-    "16:9": "assets/generated/gen_123_1024x576.png",
-    "9:16": "assets/generated/gen_123_576x1024.png"
-  }
-}
-```
-
-### ChromaDB Vector Database
-
-- **Host Machine**: `./db/chroma/`
-- **Container**: `/app/db/chroma/`
-- Stores campaign embeddings for similarity search
-- Persists across container restarts
-
-### DuckDB Analytics Database
-
-- **Host Machine**: `./db/campaigns.duckdb`
-- **Container**: `/app/db/campaigns.duckdb`
-- Logs all campaign generation events for analytics
-- **Initialization**: Uses FastAPI lifespan events for proper startup/shutdown
-- **Connection**: Single pooled connection reused across requests
-
-**Schema:**
-
-```sql
-CREATE TABLE campaigns (
-    campaign_id VARCHAR PRIMARY KEY,
-    created_at TIMESTAMP,
-    products VARCHAR,
-    region VARCHAR,
-    audience VARCHAR,
-    message TEXT,
-    output_square VARCHAR,
-    output_landscape VARCHAR,
-    output_portrait VARCHAR,
-    compliance_status VARCHAR,
-    compliance_issues TEXT
-)
-```
-
-**Example Queries:**
+### Making Changes
 
 ```bash
-# Connect from inside the container
+# Stop container
+docker stop adobe-fastapi-container
+
+# Remove container
+docker rm adobe-fastapi-container
+
+# Rebuild with changes
+docker build -t adobe-fastapi-app .
+
+# Run updated container
+docker run -d -p 8080:80 --name adobe-fastapi-container \
+  -v "$(pwd)/assets:/app/assets" \
+  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/.env:/app/.env" \
+  adobe-fastapi-app
+```
+
+### Viewing Logs
+
+```bash
+# Container logs
+docker logs adobe-fastapi-container
+
+# Follow logs in real-time
+docker logs -f adobe-fastapi-container
+
+# Check specific services
+docker logs adobe-fastapi-container | grep -E "(🚀|🔄|✅|⚠️|🌍|🏷️)"
+```
+
+### Database Access
+
+```bash
+# Query DuckDB analytics
 docker exec adobe-fastapi-container /app/.venv/bin/python -c "
 import duckdb
-conn = duckdb.connect('db/campaigns.duckdb')
+conn = duckdb.connect('db/campaigns.duckdb', read_only=True)
 print(conn.execute('SELECT campaign_id, created_at, region, compliance_status FROM campaigns ORDER BY created_at DESC LIMIT 5').fetchall())
+"
+
+# Check ChromaDB collections
+docker exec adobe-fastapi-container /app/.venv/bin/python -c "
+import chromadb
+client = chromadb.Client()
+print(client.list_collections())
 "
 ```
 
-**Note**: Both volume mounts (`assets` and `db`) ensure your data persists on the host machine and survives container restarts/removals.
+## 🐛 Troubleshooting
 
-## Architecture & Data Flow
+### Common Issues
 
-When you POST to `/campaigns/generate`:
-
-1. ** Vector Embeddings** → Campaign text is embedded and stored in ChromaDB for similarity search
-2. ** Image Generation** → Three images generated via Hugging Face API (square, landscape, portrait)
-3. ** Compliance Check** → Message is validated for compliance issues
-4. ** Analytics Logging** → Full campaign details logged to DuckDB
-5. ** Response** → Returns campaign ID, file paths, and compliance status
-
-### Lifecycle Management
-
-The application uses **FastAPI lifespan events** for proper resource management:
-
-- **Startup** (`app/main.py`):
-  - DuckDB connection initialized
-  - Tables created if not exist
-  - Connection pooled for reuse
-- **Shutdown** (`app/main.py`):
-  - DuckDB connection closed gracefully
-  - No data loss on container stop
-
-### troubleshooting
-
-`double check you've exported api keys from .env file.`
-
-1. remove the docker container
+**1. Container won't start:**
 
 ```bash
-docker rm adobe-fastapi-container
+# Check logs
+docker logs adobe-fastapi-container
+
+# Common fixes:
+# - Missing .env file
+# - Invalid API keys
+# - Port conflicts
 ```
 
-2. check docker logs
+**2. Images not displaying:**
 
 ```bash
-docker logs adobe-fastapi
+# Check if assets are accessible
+curl -I http://localhost:8080/assets/generated/campaign_*/product_name/1x1/image_1x1.png
+
+# Verify volume mounts
+docker inspect adobe-fastapi-container | grep -A 10 "Mounts"
 ```
 
-3. potential issues
-   a. Be certain Chromadb is lazy loaded
-   b. port conflict with chroma and fastapi; check port conflict
+**3. Translation not working:**
 
 ```bash
-lsof -i :8000
+# Check OpenAI API key
+docker exec adobe-fastapi-container printenv OPENAI_API_KEY
+
+# Test translation manually
+docker exec adobe-fastapi-container /app/.venv/bin/python -c "
+from app.services.generator import translate_message_with_llm
+print(translate_message_with_llm('Safety first', 'Mexico'))
+"
 ```
 
-<!-- confirm docker is running -->
+**4. Port conflicts:**
 
 ```bash
+# Check what's using port 8080
+lsof -i :8080
+
+# Use different port
+docker run -d -p 8081:80 --name adobe-fastapi-container ...
+```
+
+### Performance Optimization
+
+**For faster generation:**
+
+- Use OpenAI DALL-E 3 (set `HF_TOKEN=""` to skip Hugging Face)
+- Reduce image quality in `generator.py`
+- Use smaller image sizes
+
+**For better translations:**
+
+- Upgrade to GPT-4 in `translate_message_with_llm()`
+- Add more language mappings in `region_languages`
+
+## 📊 Monitoring
+
+### Health Checks
+
+```bash
+# API health
+curl http://localhost:8080/api/health
+
+# Container status
 docker ps --filter name=adobe-fastapi-container
+
+# Resource usage
+docker stats adobe-fastapi-container
 ```
 
-## Tech Stack
+### Analytics Queries
 
-- **FastAPI** - Modern Python web framework
-- **DuckDB** - Analytics database for campaign logging
-- **ChromaDB** - Vector database for similarity search
-- **Sentence Transformers** - Text embeddings
-- **Hugging Face** - AI image generation API
-- **Docker** - Containerization
-- **uv** - Fast Python package manager
+```bash
+# Campaign success rate
+docker exec adobe-fastapi-container /app/.venv/bin/python -c "
+import duckdb
+conn = duckdb.connect('db/campaigns.duckdb', read_only=True)
+result = conn.execute('SELECT compliance_status, COUNT(*) FROM campaigns GROUP BY compliance_status').fetchall()
+print('Compliance Status:', result)
+"
 
-## License
+# Most popular regions
+docker exec adobe-fastapi-container /app/.venv/bin/python -c "
+import duckdb
+conn = duckdb.connect('db/campaigns.duckdb', read_only=True)
+result = conn.execute('SELECT region, COUNT(*) as campaigns FROM campaigns GROUP BY region ORDER BY campaigns DESC LIMIT 10').fetchall()
+print('Top Regions:', result)
+"
+```
 
-MIT
+## 🚀 Production Deployment
+
+### Environment Variables
+
+```bash
+# Production .env
+OPENAI_API_KEY=sk-proj-your-production-key
+HF_TOKEN=hf_your-production-token
+```
+
+### Docker Compose (Optional)
+
+```yaml
+# docker-compose.yml
+version: "3.8"
+services:
+  creative-pipeline:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./assets:/app/assets
+      - ./db:/app/db
+      - ./.env:/app/.env
+    restart: unless-stopped
+```
+
+### Security Considerations
+
+- Rotate API keys regularly
+- Use environment-specific keys
+- Monitor API usage and costs
+- Implement rate limiting for production
+
+## 📚 API Documentation
+
+- **Interactive Docs**: http://localhost:8080/docs
+- **OpenAPI Spec**: http://localhost:8080/openapi.json
+- **Health Check**: http://localhost:8080/api/health
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
 
 ---
 
-<div align="center">
-  <a target="_blank" href="https://astral.sh" style="background:none">
-    <img src="https://raw.githubusercontent.com/astral-sh/uv/main/assets/svg/Astral.svg" alt="Made by Astral" width="120">
-  </a>
-</div>
+**Need help?** Check the logs first: `docker logs adobe-fastapi-container`

@@ -196,6 +196,12 @@ docker logs adobe-fastapi
 lsof -i :8000
 ```
 
+<!-- confirm docker is running -->
+
+```bash
+docker ps --filter name=adobe-fastapi-container
+```
+
 ## Tech Stack
 
 - **FastAPI** - Modern Python web framework

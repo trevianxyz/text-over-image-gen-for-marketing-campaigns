@@ -12,7 +12,7 @@ def generate_campaign(brief: CampaignBrief):
     campaign_id = str(uuid.uuid4())
 
     # index in Chroma
-    upsert_asset(campaign_id, brief.message, brief.dict())
+    upsert_asset(campaign_id, brief.message, brief.model_dump())
 
     # optional: search existing assets
     similar = search_assets(brief.message, top_k=2)

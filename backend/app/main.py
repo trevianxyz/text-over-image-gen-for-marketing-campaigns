@@ -28,9 +28,25 @@ app = FastAPI(
 )
 
 # Mount static files and templates
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-templates = Jinja2Templates(directory="frontend/templates")
+import os
+from pathlib import Path
+
+# Get the project root directory (parent of backend)
+project_root = Path(__file__).parent.parent.parent
+frontend_static = project_root / "frontend" / "static"
+frontend_templates = project_root / "frontend" / "templates"
+assets_dir = project_root / "assets"
+
+# Debug: Print paths to verify they exist
+print(f"🔍 Debug paths:")
+print(f"  Project root: {project_root}")
+print(f"  Frontend static: {frontend_static} - exists: {frontend_static.exists()}")
+print(f"  Frontend templates: {frontend_templates} - exists: {frontend_templates.exists()}")
+print(f"  Assets dir: {assets_dir} - exists: {assets_dir.exists()}")
+
+app.mount("/static", StaticFiles(directory=str(frontend_static)), name="static")
+app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+templates = Jinja2Templates(directory=str(frontend_templates))
 
 # Optional: allow local frontend / demo tools
 app.add_middleware(
@@ -57,3 +73,31 @@ def health_check():
 
 # Include campaign routes
 app.include_router(routes.router, prefix="/campaigns", tags=["campaigns"])
+
+# Add countries endpoint directly to main app
+from app.services.country_language import get_country_selector_data
+
+@app.get("/api/countries")
+def get_countries():
+    """Get all available countries for the country selector"""
+    try:
+        data = get_country_selector_data()
+        print(f"🌍 Serving {len(data.get('countries', []))} countries to frontend")
+        return data
+    except Exception as e:
+        print(f"❌ Error serving countries data: {e}")
+        return {"error": "Failed to load countries data", "countries": [], "regions": []}
+
+# Add audience endpoint
+from app.services.audience_selector import get_audience_selector_data
+
+@app.get("/api/audiences")
+def get_audiences():
+    """Get all available audiences for the audience selector"""
+    try:
+        data = get_audience_selector_data()
+        print(f"👥 Serving {data.get('total_count', 0)} audiences to frontend")
+        return data
+    except Exception as e:
+        print(f"❌ Error serving audiences data: {e}")
+        return {"error": "Failed to load audiences data", "audiences": [], "categories": {}}

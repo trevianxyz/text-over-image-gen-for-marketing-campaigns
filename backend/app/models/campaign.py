@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional, List, Dict
 
 from enum import Enum
@@ -29,6 +29,22 @@ class CampaignBrief(BaseModel):
     audience: str  # Keep as string for compatibility with existing code
     message: str
     assets: Optional[List[str]] = None
+    
+    @validator('region')
+    def validate_region(cls, v):
+        """Validate that the region is a valid country code or legacy region"""
+        from app.services.country_language import get_country_by_code, get_legacy_region_mapping
+        
+        # Check if it's a valid country code
+        if get_country_by_code(v):
+            return v
+            
+        # Check if it's a legacy region name
+        if get_legacy_region_mapping(v):
+            return v
+            
+        # If neither, raise validation error
+        raise ValueError(f"Invalid region: {v}. Must be a valid country code or legacy region name.")
 
 class GenerationResult(BaseModel):
     campaign_id: str

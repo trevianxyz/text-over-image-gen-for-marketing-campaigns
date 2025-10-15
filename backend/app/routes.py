@@ -19,6 +19,7 @@ def generate_campaign(brief: CampaignBrief):
     # Create campaign directory
     campaign_dir = Path("assets/generated") / f"campaign_{timestamp}_{campaign_id}"
     campaign_dir.mkdir(parents=True, exist_ok=True)
+    print(f"📁 Created campaign directory: {campaign_dir}")
 
     # Store embeddings
     embed_and_store(campaign_id, brief.message, brief.model_dump())
@@ -29,7 +30,7 @@ def generate_campaign(brief: CampaignBrief):
     
     for product in brief.products:
         print(f"🎨 Generating creatives for product: {product}")
-        product_outputs = generate_creatives(prompt, campaign_id=campaign_id, product=product, region=brief.region, message=brief.message)
+        product_outputs = generate_creatives(prompt, campaign_id=campaign_id, product=product, region=brief.region, message=brief.message, campaign_dir=campaign_dir)
         all_outputs[product] = product_outputs
         
         # Create individual artifacts for each size variant

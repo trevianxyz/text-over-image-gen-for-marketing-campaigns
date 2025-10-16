@@ -433,5 +433,5 @@ MIT License - see LICENSE file for details
 Stop. Remove. Build. Run.  -->
 
 ```bash
-docker stop adobe-fastapi-container && docker rm adobe-fastapi-container && docker build -t adobe-fastapi-app . && docker run -d -p 8080:80 --name adobe-fastapi-container -v "$(pwd)/assets:/app/assets" -v "$(pwd)/db:/app/db" -v "$(pwd)/.env:/app/.env" adobe-fastapi-app
+docker stop adobe-fastapi-container && docker rm adobe-fastapi-container && docker build -t adobe-fastapi-app . && docker run -d -p 8080:8080 --name adobe-fastapi-container -v "$(pwd)/assets:/app/assets" -v "$(pwd)/db:/app/db" adobe-fastapi-app
 ```

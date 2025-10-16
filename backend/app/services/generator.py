@@ -232,10 +232,10 @@ def add_brand_overlay(image_path: str, product: str, country_name: str, message:
         language_code = get_primary_language(country_code)
         
         # List of fonts to try in order of preference (international support)
-        # Prioritize CJK fonts for CJK languages
+        # Prioritize script-specific fonts for better rendering
         if language_code.lower() in ['japanese', 'chinese', 'korean']:
+            # CJK-specific fonts
             font_paths = [
-                # CJK-specific fonts (must come first for CJK languages)
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
                 "/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf",
@@ -243,19 +243,42 @@ def add_brand_overlay(image_path: str, product: str, country_name: str, message:
                 "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
                 "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
                 "/System/Library/Fonts/Hiragino Sans GB.ttc",  # macOS
-                # Fallback to general Unicode fonts
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
             ]
-        else:
+        elif language_code.lower() in ['arabic', 'persian', 'urdu', 'hebrew']:
+            # Arabic/Hebrew RTL script fonts
             font_paths = [
-                # General Unicode fonts for non-CJK languages
+                "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansArabic-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Has Arabic support
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+                "/System/Library/Fonts/GeezaPro.ttc",  # macOS Arabic
+            ]
+        elif language_code.lower() in ['russian', 'ukrainian', 'bulgarian', 'serbian', 'kazakh', 'georgian', 'armenian']:
+            # Cyrillic and other non-Latin scripts
+            font_paths = [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Excellent Cyrillic support
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",  # Good Cyrillic support
+                "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansCyrillic-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansGeorgian-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansArmenian-Bold.ttf",
+                "/System/Library/Fonts/Helvetica.ttc",  # macOS
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            ]
+        else:
+            # General Unicode fonts for Latin and other scripts
+            font_paths = [
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
                 "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
                 "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",  # Fallback for mixed content
                 "/System/Library/Fonts/Helvetica.ttc",  # macOS
-                "/System/Library/Fonts/Arial.ttf",      # macOS
+                "/System/Library/Fonts/Arial.ttf",  # macOS
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             ]

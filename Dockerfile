@@ -3,16 +3,21 @@ FROM python:3.12-slim-bookworm
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Install fonts for international text support (RTL, non-Latin scripts)
+# Install fonts for international text support (RTL, non-Latin scripts, CJK, Arabic, Cyrillic)
 RUN apt-get update && apt-get install -y \
     fonts-liberation \
     fonts-dejavu-core \
+    fonts-dejavu \
     fonts-noto-core \
+    fonts-noto \
     fonts-noto-cjk \
+    fonts-noto-cjk-extra \
+    fonts-takao \
     fonts-arabeyes \
+    fonts-kacst \
+    fonts-farsiweb \
     fonts-khmeros \
     fonts-thai-tlwg \
-    fonts-takao \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the application into the container.

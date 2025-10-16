@@ -9,12 +9,21 @@
     <div style="margin-top: .2rem;">
         <img src="{{ url_for('assets', path='werkr_brand_image.png') }}" alt="Werkr Logo" style="height:600px;">
     </div>
-    {# <div style="margin-top: 1rem; color: green; font-weight: bold;">
-        [CONFIRMATION: This message is displaying on frontend]
-    </div> #}
+</div>
+
+<!-- Campaign Search Section -->
+<div class="search-section">
+    <h3>🔍 Find Similar Campaigns</h3>
+    <p>Search past campaigns using natural language to reuse and modify successful campaigns</p>
+    <div class="search-container">
+        <input type="text" id="searchQuery" placeholder="e.g., 'safety gear for construction workers in Japan'" class="search-input">
+        <button type="button" id="searchBtn" class="btn-search">Search</button>
+    </div>
+    <div id="searchResults" class="search-results" style="display: none;"></div>
 </div>
 
 <div class="form-container">
+    <h3>Create New Campaign</h3>
     <form id="campaignForm">
         <div class="form-group">
             <label for="products">Products *</label>
@@ -91,23 +100,23 @@
         <div class="progress-steps">
             <div class="progress-step" id="step1">
                 <span class="step-icon">⏳</span>
-                <span class="step-text">Checking compliance</span>
+                <span class="step-text">Validating request</span>
             </div>
             <div class="progress-step" id="step2">
                 <span class="step-icon">⏳</span>
-                <span class="step-text">Validating request</span>
+                <span class="step-text">Generating AI images</span>
             </div>
             <div class="progress-step" id="step3">
                 <span class="step-icon">⏳</span>
-                <span class="step-text">Generating AI images</span>
+                <span class="step-text">Translating content</span>
             </div>
             <div class="progress-step" id="step4">
                 <span class="step-icon">⏳</span>
-                <span class="step-text">Translating content</span>
+                <span class="step-text">Adding brand overlays</span>
             </div>
             <div class="progress-step" id="step5">
                 <span class="step-icon">⏳</span>
-                <span class="step-text">Adding brand overlays</span>
+                <span class="step-text">Checking compliance</span>
             </div>
             <div class="progress-step" id="step6">
                 <span class="step-icon">⏳</span>
@@ -180,6 +189,19 @@
     <h3>📜 Campaign History</h3>
     <div id="campaignHistory" class="campaign-history">
         <div class="loading-history">Loading campaign history...</div>
+    </div>
+</div>
+
+<!-- Campaign Details Modal -->
+<div id="campaignModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📸 Campaign Details</h3>
+            <span class="modal-close" onclick="closeCampaignModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Campaign details will be loaded here -->
+        </div>
     </div>
 </div>
 {% endblock %}

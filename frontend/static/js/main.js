@@ -169,10 +169,36 @@ function displayCampaignHistory(manifest) {
     // Limit to most recent 10 campaigns
     const recentCampaigns = sortedCampaigns.slice(0, 10);
     
+    // Store full manifest globally for modal and template access
+    campaignsData = manifest;
+    
     historyContainer.innerHTML = recentCampaigns.map(campaign => {
-        const timestamp = new Date(campaign.timestamp).toLocaleString();
-        const productCount = Object.keys(campaign.products).length;
-        const productNames = Object.keys(campaign.products);
+        // Extract data from nested structure
+        const request = campaign.request || {};
+        const response = campaign.response || {};
+        const metadata = campaign.metadata || {};
+        
+        // Format timestamp - handle both ISO format and YYYYMMDD_HHMMSS format
+        let timestamp;
+        if (metadata.generated_at) {
+            timestamp = new Date(metadata.generated_at).toLocaleString();
+        } else if (campaign.timestamp) {
+            // Parse YYYYMMDD_HHMMSS format
+            const ts = campaign.timestamp;
+            const year = ts.substring(0, 4);
+            const month = ts.substring(4, 6);
+            const day = ts.substring(6, 8);
+            const hour = ts.substring(9, 11);
+            const minute = ts.substring(11, 13);
+            timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}`).toLocaleString();
+        } else {
+            timestamp = 'N/A';
+        }
+        
+        const products = response.outputs || {};
+        const productCount = Object.keys(products).length;
+        const productNames = Object.keys(products);
+        const compliance = response.compliance || {};
         
         return `
             <div class="history-item" onclick="viewCampaignDetails('${campaign.campaign_id}')">
@@ -182,12 +208,12 @@ function displayCampaignHistory(manifest) {
                 </div>
                 <div class="history-details">
                     <div class="history-detail">
-                        <span class="history-detail-label">Region</span>
-                        <span class="history-detail-value">${campaign.region || 'N/A'}</span>
+                        <span class="history-detail-label">Country</span>
+                        <span class="history-detail-value">${request.country_name || request.region || 'N/A'}</span>
                     </div>
                     <div class="history-detail">
                         <span class="history-detail-label">Audience</span>
-                        <span class="history-detail-value">${campaign.audience || 'N/A'}</span>
+                        <span class="history-detail-value">${request.audience || 'N/A'}</span>
                     </div>
                     <div class="history-detail">
                         <span class="history-detail-label">Products</span>
@@ -195,7 +221,7 @@ function displayCampaignHistory(manifest) {
                     </div>
                     <div class="history-detail">
                         <span class="history-detail-label">Compliance</span>
-                        <span class="history-compliance ${(campaign.compliance_status || 'approved').toLowerCase()}">${campaign.compliance_status || 'Approved'}</span>
+                        <span class="history-compliance ${(compliance.status || 'approved').toLowerCase()}">${compliance.status || 'Approved'}</span>
                     </div>
                 </div>
                 <div class="history-products">
@@ -206,11 +232,147 @@ function displayCampaignHistory(manifest) {
     }).join('');
 }
 
+// Store campaigns data globally for modal and template access
+let campaignsData = { campaigns: [] };
+
 function viewCampaignDetails(campaignId) {
     console.log('View campaign details:', campaignId);
-    // TODO: Implement modal or detail view for campaign
-    alert(`Campaign details for ${campaignId} - Feature coming soon!`);
+    
+    // Find the campaign in the stored data
+    const campaign = campaignsData.find(c => c.campaign_id === campaignId);
+    
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    const request = campaign.request || {};
+    const response = campaign.response || {};
+    const metadata = campaign.metadata || {};
+    const products = response.outputs || {};
+    const compliance = response.compliance || {};
+    
+    // Format timestamp
+    let timestamp;
+    if (metadata.generated_at) {
+        timestamp = new Date(metadata.generated_at).toLocaleString();
+    } else if (campaign.timestamp) {
+        const ts = campaign.timestamp;
+        const year = ts.substring(0, 4);
+        const month = ts.substring(4, 6);
+        const day = ts.substring(6, 8);
+        const hour = ts.substring(9, 11);
+        const minute = ts.substring(11, 13);
+        timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}`).toLocaleString();
+    } else {
+        timestamp = 'N/A';
+    }
+    
+    // Build modal content
+    let modalHTML = `
+        <div class="modal-campaign-info">
+            <h4>Campaign Information</h4>
+            <div class="modal-info-grid">
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Campaign ID</span>
+                    <span class="modal-info-value"><code>${campaignId}</code></span>
+                </div>
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Generated At</span>
+                    <span class="modal-info-value">${timestamp}</span>
+                </div>
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Country</span>
+                    <span class="modal-info-value">${request.country_name || request.region || 'N/A'}</span>
+                </div>
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Audience</span>
+                    <span class="modal-info-value">${request.audience || 'N/A'}</span>
+                </div>
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Compliance</span>
+                    <span class="modal-info-value history-compliance ${(compliance.status || 'approved').toLowerCase()}">${compliance.status || 'Approved'}</span>
+                </div>
+                <div class="modal-info-item">
+                    <span class="modal-info-label">Message</span>
+                    <span class="modal-info-value">${request.message || 'N/A'}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-products">
+    `;
+    
+    // Add each product's images
+    for (const [productName, productOutputs] of Object.entries(products)) {
+        modalHTML += `
+            <div class="modal-product-section">
+                <h4>${productName}</h4>
+                <div class="modal-image-grid">
+        `;
+        
+        // Add images for each aspect ratio
+        if (productOutputs['1:1']) {
+            modalHTML += `
+                <div class="modal-image-card">
+                    <h5>Square (1:1)</h5>
+                    <img src="/${productOutputs['1:1']}" alt="Square format" loading="lazy">
+                    <p class="modal-image-size">1024 x 1024</p>
+                </div>
+            `;
+        }
+        
+        if (productOutputs['16:9']) {
+            modalHTML += `
+                <div class="modal-image-card">
+                    <h5>Landscape (16:9)</h5>
+                    <img src="/${productOutputs['16:9']}" alt="Landscape format" loading="lazy">
+                    <p class="modal-image-size">1920 x 1080</p>
+                </div>
+            `;
+        }
+        
+        if (productOutputs['9:16']) {
+            modalHTML += `
+                <div class="modal-image-card">
+                    <h5>Portrait (9:16)</h5>
+                    <img src="/${productOutputs['9:16']}" alt="Portrait format" loading="lazy">
+                    <p class="modal-image-size">1080 x 1920</p>
+                </div>
+            `;
+        }
+        
+        modalHTML += `
+                </div>
+            </div>
+        `;
+    }
+    
+    modalHTML += `</div>`;
+    
+    // Display modal
+    document.getElementById('modalBody').innerHTML = modalHTML;
+    document.getElementById('campaignModal').style.display = 'flex';
 }
+
+function closeCampaignModal() {
+    document.getElementById('campaignModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('campaignModal');
+    if (e.target === modal) {
+        closeCampaignModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCampaignModal();
+    }
+});
 
 // Product tags functionality
 const productInput = document.getElementById('productInput');
@@ -422,7 +584,7 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
     
     const data = {
         products: products,
-        region: region,
+        country_name: region,
         audience: audience,
         message: message
     };
@@ -627,5 +789,225 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
 
 function hideError() {
     document.getElementById('error').style.display = 'none';
+}
+
+// ===== CAMPAIGN SEARCH FUNCTIONALITY =====
+
+// Search for similar campaigns
+document.getElementById('searchBtn').addEventListener('click', async () => {
+    const query = document.getElementById('searchQuery').value.trim();
+    
+    if (!query) {
+        alert('Please enter a search query');
+        return;
+    }
+    
+    const searchBtn = document.getElementById('searchBtn');
+    const originalText = searchBtn.textContent;
+    searchBtn.textContent = '🔍 Searching...';
+    searchBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/campaigns/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, top_k: 5 })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        displaySearchResults(data);
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        alert(`Search failed: ${error.message}`);
+    } finally {
+        searchBtn.textContent = originalText;
+        searchBtn.disabled = false;
+    }
+});
+
+// Allow Enter key to trigger search
+document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('searchBtn').click();
+    }
+});
+
+// Display search results
+function displaySearchResults(data) {
+    const resultsContainer = document.getElementById('searchResults');
+    
+    if (!data.results || data.results.length === 0) {
+        resultsContainer.innerHTML = '<div class="search-no-results">No similar campaigns found. Try a different search query.</div>';
+        resultsContainer.style.display = 'block';
+        return;
+    }
+    
+    let html = '<h4 style="margin-top: 0;">Found ' + data.total_results + ' Similar Campaign' + (data.total_results !== 1 ? 's' : '') + '</h4>';
+    
+    data.results.forEach(result => {
+        const campaign = result.full_campaign || {};
+        const request = campaign.request || {};
+        const metadata = result.metadata || request;
+        
+        const score = result.similarity_score ? (result.similarity_score * 100).toFixed(1) : 'N/A';
+        const country = metadata.country_name || metadata.region || 'Unknown';
+        const audience = metadata.audience || 'Unknown';
+        const products = metadata.products ? (Array.isArray(metadata.products) ? metadata.products.join(', ') : metadata.products) : 'N/A';
+        
+        html += `
+            <div class="search-result-item" data-campaign-id="${result.campaign_id}">
+                <div class="search-result-header">
+                    <div>
+                        <div class="search-result-message">"${result.message}"</div>
+                    </div>
+                    <div class="search-result-score">${score}% Match</div>
+                </div>
+                <div class="search-result-meta">
+                    <div class="search-result-meta-item">
+                        <span class="search-result-meta-label">Country:</span>
+                        <span>${country}</span>
+                    </div>
+                    <div class="search-result-meta-item">
+                        <span class="search-result-meta-label">Audience:</span>
+                        <span>${audience}</span>
+                    </div>
+                    <div class="search-result-meta-item">
+                        <span class="search-result-meta-label">Products:</span>
+                        <span>${products}</span>
+                    </div>
+                </div>
+                <div class="search-result-actions">
+                    <button class="btn-use-campaign" onclick="useCampaignTemplate('${result.campaign_id}')">
+                        ✨ Use as Template
+                    </button>
+                    <button class="btn-view-images" onclick="viewCampaignDetails('${result.campaign_id}')">
+                        🖼️ View Images
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsContainer.innerHTML = html;
+    resultsContainer.style.display = 'block';
+    
+    // Scroll to results
+    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Use a campaign as a template
+async function useCampaignTemplate(campaignId) {
+    console.log('Using campaign as template:', campaignId);
+    
+    // Check if campaign data is loaded
+    if (!campaignsData || !campaignsData.campaigns) {
+        alert('Campaign history not loaded yet. Please wait a moment and try again.');
+        return;
+    }
+    
+    // Find the campaign in the global data
+    const campaign = campaignsData.campaigns.find(c => c.campaign_id === campaignId);
+    
+    if (!campaign) {
+        alert('Campaign not found. It may have been deleted.');
+        console.error('Campaign not found:', campaignId);
+        return;
+    }
+    
+    const request = campaign.request || {};
+    
+    try {
+        // Populate the form with campaign data
+        // Products
+        if (request.products && Array.isArray(request.products)) {
+            // Clear existing products
+            productsList = [];
+            const productTags = document.getElementById('productTags');
+            if (!productTags) {
+                console.error('Product tags container not found');
+                throw new Error('Form elements not ready');
+            }
+            productTags.innerHTML = '';
+            
+            // Add products from campaign
+            request.products.forEach(product => {
+                addProduct(product);
+            });
+        }
+    
+    // Country
+    if (request.country_name || request.region) {
+        const countryCode = request.country_name || request.region;
+        // Try to find the country in the list
+        const country = countriesData.countries.find(c => c.code === countryCode || c.name === countryCode);
+        if (country) {
+            selectCountry(country);
+        } else {
+            // If not found, just set the text
+            document.getElementById('countrySearch').value = countryCode;
+            selectedCountry = { code: countryCode, name: countryCode };
+        }
+    }
+    
+    // Audience (split into profession and demographic if combined)
+    if (request.audience) {
+        const audienceParts = request.audience.split('_');
+        if (audienceParts.length >= 2) {
+            // Try to set profession
+            const professionSelect = document.getElementById('profession');
+            const demographicSelect = document.getElementById('demographic');
+            
+            // Find matching options
+            for (let option of professionSelect.options) {
+                if (option.value === audienceParts[0] || request.audience === option.value) {
+                    professionSelect.value = option.value;
+                    break;
+                }
+            }
+            
+            for (let option of demographicSelect.options) {
+                if (option.value === audienceParts[1] || request.audience === option.value) {
+                    demographicSelect.value = option.value;
+                    break;
+                }
+            }
+        } else {
+            // Try to set in profession first
+            const professionSelect = document.getElementById('profession');
+            for (let option of professionSelect.options) {
+                if (option.value === request.audience) {
+                    professionSelect.value = option.value;
+                    break;
+                }
+            }
+        }
+    }
+    
+        // Message
+        if (request.message) {
+            const messageField = document.getElementById('message');
+            if (messageField) {
+                messageField.value = request.message;
+            }
+        }
+        
+        // Scroll to the form
+        const form = document.getElementById('campaignForm');
+        if (form) {
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Show a notification
+        alert('✨ Campaign template loaded! You can now modify the fields and generate a new campaign.');
+        
+    } catch (error) {
+        console.error('Error loading campaign template:', error);
+        alert(`Failed to load campaign template: ${error.message}`);
+    }
 }
 

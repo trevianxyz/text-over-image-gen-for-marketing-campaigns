@@ -49,16 +49,20 @@ def get_last_translation_metadata():
     return _last_translation_metadata
 
 
-def translate_message_with_llm(message: str, region: str, audience: str = None) -> str:
+def translate_message_with_llm(message: str, country_name: str, audience: str = None) -> str:
     """
-    Use LLM to translate the message into the native language of the region,
+    Use LLM to translate the message into the native language of the country,
     considering the target audience for better cultural adaptation.
     """
-    from .country_language import get_legacy_region_mapping, get_primary_language
+    from .country_language import get_legacy_region_mapping, get_primary_language, get_country_by_code, get_country_by_name
     
     # Handle both legacy region names and country codes
-    country_code = get_legacy_region_mapping(region) or region
+    country_code = get_legacy_region_mapping(country_name) or country_name
     target_language = get_primary_language(country_code)
+    
+    # Try to get country info by code first, then by name as fallback
+    country_info = get_country_by_code(country_code) or get_country_by_name(country_name)
+    country_full_name = country_info.name if country_info else country_name
 
     if target_language == "English":
         return message
@@ -83,12 +87,12 @@ def translate_message_with_llm(message: str, region: str, audience: str = None) 
 
         system_prompt = f"""
 You are an integrated marketing AI professional working on the global construction work apparel brand WERKR. 
-Your role is to adapt English seed copy into a localized, culturally resonant marketing message.
+Your role is to receive an English seed copy and generate a new, creative, and localized, culturally resonant marketing message in {target_language} for the target audience. 
 
 TASK:
-- Rewrite the seed copy into a new, concise, and impactful creative message for a {target_language}-speaking audience.
-- Consider cultural nuances and social preferences of audiences in {country_code}.
-- Context about the audience: {audience_context}.
+- Generate a new, different, compelling creative marketing message for a {target_language}-speaking audience.
+- Consider cultural nuances and social preferences of audiences in {country_full_name}.
+- The target audience is: {audience_context}.
 
 OUTPUT RULES:
 - Write the final message directly, with no explanations, prefixes, or commentary.
@@ -98,12 +102,12 @@ OUTPUT RULES:
 - If the target language is English:
   - Output only the English message.
 
-The copy must be production-ready and suitable for use in an advertising campaign.
+The new, creative, generated copy must be production-ready, in {target_language} and suitable for use in an advertising campaign in {country_full_name}.
 """
 
         try:
             response = client.chat.completions.create(
-                model="gpt-5",
+                model="gpt-4.1",
                 messages=[
                     {
                         "role": "system",
@@ -117,10 +121,10 @@ The copy must be production-ready and suitable for use in an advertising campaig
                 max_tokens=150,
                 temperature=0.7
             )
-        except Exception as gpt5_error:
-            print(f"⚠️ GPT-5 model failed: {gpt5_error}. Falling back to gpt-4.1.")
+        except Exception as gpt41_error:
+            print(f"⚠️ GPT-4.1 model failed: {gpt41_error}. Falling back to gpt-4o")
             response = client.chat.completions.create(
-                model="gpt-4.1",
+                model="gpt-4o",
                 messages=[
                     {
                         "role": "system",
@@ -156,18 +160,18 @@ The copy must be production-ready and suitable for use in an advertising campaig
         return translated_message
 
     except Exception as e:
-        print(f"⚠️ Translation failed for {region}: {e}")
+        print(f"⚠️ Translation failed for {country_name}: {e}")
         return message  # Fallback to original message
 
 
-def localize_prompt(prompt: str, region: str) -> str:
+def localize_prompt(prompt: str, country_name: str) -> str:
     """
-    Localize the prompt based on region for better cultural relevance.
+    Localize the prompt based on country for better cultural relevance.
     """
     from .country_language import get_legacy_region_mapping, get_country_by_code
     
     # Handle both legacy region names and country codes
-    country_code = get_legacy_region_mapping(region) or region
+    country_code = get_legacy_region_mapping(country_name) or country_name
     country_info = get_country_by_code(country_code)
     
     if country_info:
@@ -175,17 +179,17 @@ def localize_prompt(prompt: str, region: str) -> str:
         localized_context = f"{country_info.name} culture, {country_info.region} lifestyle"
     else:
         # Fallback to generic localization
-        localized_context = f"{region} culture and lifestyle"
+        localized_context = f"{country_name} culture and lifestyle"
     
     return f"{prompt}, {localized_context}"
 
 
-def add_brand_overlay(image_path: str, product: str, region: str, message: str, audience: str = None) -> str:
+def add_brand_overlay(image_path: str, product: str, country_name: str, message: str, audience: str = None) -> str:
     """
     Add brand overlay, localized text, and translated message to the image.
     """
-    # Translate the message to the region's native language
-    translated_message = translate_message_with_llm(message, region, audience)
+    # Translate the message to the country's native language
+    translated_message = translate_message_with_llm(message, country_name, audience)
 
     # Load the main image
     with Image.open(image_path) as img:
@@ -224,7 +228,7 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
         
         # Determine language and select appropriate font
         from .country_language import get_legacy_region_mapping, get_primary_language
-        country_code = get_legacy_region_mapping(region) or region
+        country_code = get_legacy_region_mapping(country_name) or country_name
         language_code = get_primary_language(country_code)
         
         # List of fonts to try in order of preference (international support)
@@ -287,7 +291,7 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
         if translated_message:
             # Get language direction for proper positioning
             from .country_language import get_legacy_region_mapping, get_primary_language
-            country_code = get_legacy_region_mapping(region) or region
+            country_code = get_legacy_region_mapping(country_name) or country_name
             language_code = get_primary_language(country_code)
             is_rtl = is_rtl_language(language_code)
             
@@ -329,11 +333,11 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
             
             print(f"🌍 Text direction: {'RTL' if is_rtl else 'LTR'} for language {language_code}")
 
-        # 2. Add region branding text (smaller, above brand logo)
+        # 2. Add country branding text (smaller, above brand logo)
         from .country_language import get_legacy_region_mapping, get_country_by_code
         
         # Handle both legacy region names and country codes
-        country_code = get_legacy_region_mapping(region) or region
+        country_code = get_legacy_region_mapping(country_name) or country_name
         country_info = get_country_by_code(country_code)
         
         if country_info:
@@ -341,37 +345,37 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
             region_label = f"Made in {country_info.name}"
         else:
             # Fallback to generic branding
-            region_label = f"Made in {region}"
+            region_label = f"Made in {country_name}"
 
         # Calculate position for region label (below brand logo in top left)
-        if font_small:
-            bbox = draw.textbbox((0, 0), region_label, font=font_small)
-            region_width = bbox[2] - bbox[0]
-            region_height = bbox[3] - bbox[1]
-        else:
-            region_width = len(region_label) * 8
-            region_height = 16
+        # if font_small:
+        #     bbox = draw.textbbox((0, 0), region_label, font=font_small)
+        #     region_width = bbox[2] - bbox[0]
+        #     region_height = bbox[3] - bbox[1]
+        # else:
+        #     region_width = len(region_label) * 8
+        #     region_height = 16
 
-        # Position below the brand logo with padding
-        if BRAND_IMAGE_PATH.exists():
-            region_x = x + (brand_img.width - region_width) // 2
-            region_y = y + brand_img.height + 10
-        else:
-            region_x = 20
-            region_y = 20
+        # # Position below the brand logo with padding
+        # if BRAND_IMAGE_PATH.exists():
+        #     region_x = x + (brand_img.width - region_width) // 2
+        #     region_y = y + brand_img.height + 10
+        # else:
+        #     region_x = 20
+        #     region_y = 20
 
-        # Add region label with outline
-        for adj in range(-1, 2):
-            for adj2 in range(-1, 2):
-                if adj != 0 or adj2 != 0:
-                    draw.text((region_x + adj, region_y + adj2), region_label, font=font_small, fill=outline_color)
+        # # Add region label with outline
+        # for adj in range(-1, 2):
+        #     for adj2 in range(-1, 2):
+        #         if adj != 0 or adj2 != 0:
+        #             draw.text((region_x + adj, region_y + adj2), region_label, font=font_small, fill=outline_color)
 
-        # Draw main region text
-        draw.text((region_x, region_y), region_label, font=font_small, fill=text_color)
+        # # Draw main region text
+        # draw.text((region_x, region_y), region_label, font=font_small, fill=text_color)
 
         # Save the modified image
         img.save(image_path, "PNG", quality=95)
-        print(f"🏷️ Added brand overlay, translated message, and localization for {product} in {region}")
+        print(f"🏷️ Added brand overlay, translated message, and localization for {product} in {country_name}")
 
     return image_path
 
@@ -427,7 +431,7 @@ def generate_with_openai(prompt: str, width: int, height: int) -> bytes:
         return response.content
 
 
-def generate_single_image(prompt: str, campaign_id: str, product: str, region: str, campaign_dir: Optional[Path] = None) -> str:
+def generate_single_image(prompt: str, campaign_id: str, product: str, country_name: str, campaign_dir: Optional[Path] = None) -> str:
     """
     Generate a single base image using Hugging Face or OpenAI fallback.
     Returns the path to the base image.
@@ -445,8 +449,8 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, region: s
     print(f"📁 Created product directory: {product_dir}")
 
     # Localize the prompt for better cultural relevance
-    localized_prompt = localize_prompt(prompt, region)
-    print(f"🌍 Localized prompt for {region}: {localized_prompt}")
+    localized_prompt = localize_prompt(prompt, country_name)
+    print(f"🌍 Localized prompt for {country_name}: {localized_prompt}")
 
     # Generate base image (use square format for best quality)
     try:
@@ -477,7 +481,7 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, region: s
     return str(base_image_path)
 
 
-def create_size_variants(base_image_path: str, campaign_id: str, product: str, region: str, message: str, campaign_dir: Optional[Path] = None, audience: str = None) -> dict:
+def create_size_variants(base_image_path: str, campaign_id: str, product: str, country_name: str, message: str, campaign_dir: Optional[Path] = None, audience: str = None) -> dict:
     """
     Create 3 size variants (1:1, 16:9, 9:16) from a base image.
     Uses smart cropping to maintain aspect ratio and image quality.
@@ -520,7 +524,7 @@ def create_size_variants(base_image_path: str, campaign_id: str, product: str, r
             resized_img.save(image_path, "PNG", quality=95)
 
             # Add brand overlay, localization, and translated message
-            final_image_path = add_brand_overlay(str(image_path), product, region, message, audience)
+            final_image_path = add_brand_overlay(str(image_path), product, country_name, message, audience)
             outputs[aspect_ratio] = final_image_path
             print(f"📐 Created {aspect_ratio} variant for {product}: {final_image_path}")
 
@@ -561,7 +565,7 @@ def generate_creatives(
     height: int = 1024,
     campaign_id: Optional[str] = None,
     product: Optional[str] = None,
-    region: Optional[str] = None,
+    country_name: Optional[str] = None,
     message: Optional[str] = None,
     campaign_dir: Optional[Path] = None,
     audience: Optional[str] = None,
@@ -571,8 +575,8 @@ def generate_creatives(
     Returns dict with aspect ratios as keys and file paths as values.
     """
     # Validate required parameters
-    if not campaign_id or not product or not region:
-        raise ValueError("campaign_id, product, and region are required")
+    if not campaign_id or not product or not country_name:
+        raise ValueError("campaign_id, product, and country_name are required")
     
     # Ensure campaign_dir is provided
     if campaign_dir is None:
@@ -581,10 +585,10 @@ def generate_creatives(
     print(f"🎨 Generating creatives for product '{product}' in campaign_dir: {campaign_dir}")
     
     # Generate the base image for this product
-    base_image_path = generate_single_image(prompt, campaign_id, product, region, campaign_dir)
+    base_image_path = generate_single_image(prompt, campaign_id, product, country_name, campaign_dir)
 
     # Create size variants for this product
-    outputs = create_size_variants(base_image_path, campaign_id, product, region, message, campaign_dir, audience)
+    outputs = create_size_variants(base_image_path, campaign_id, product, country_name, message, campaign_dir, audience)
 
     return outputs
 

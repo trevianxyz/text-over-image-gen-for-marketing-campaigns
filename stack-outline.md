@@ -72,7 +72,7 @@
 
 ### **Internationalization**
 
-- **OpenAI GPT-5** - Translation service
+- **OpenAI GPT-4.1** - Translation service
   - Cultural adaptation
   - Context-aware translations
   - 50+ countries supported

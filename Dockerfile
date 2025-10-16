@@ -23,4 +23,6 @@ WORKDIR /app
 RUN uv sync --locked --no-cache
 
 # Run the application.
-CMD ["/app/.venv/bin/fastapi", "run", "backend/app/main.py", "--port", "80"]
+# (No, this does NOT directly affect the frontend Jinja2 templates. This line only specifies the process to run, i.e., starting the FastAPI backend server.)
+CMD ["/app/.venv/bin/fastapi", "run", "backend/app/main.py", "--port", "8080"]
+

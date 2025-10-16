@@ -1,12 +1,15 @@
 """Embeddings service"""
 from typing import Any, Dict
 import chromadb
-from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
-# Initialize ChromaDB
-client = chromadb.Client(Settings(persist_directory="db/chroma"))
-collection = client.get_or_create_collection("campaign_assets")
+# Initialize ChromaDB with persistence
+client = chromadb.PersistentClient(path="db/chroma")
+# Use cosine distance for better similarity scoring (returns values 0-2, where 0 = identical)
+collection = client.get_or_create_collection(
+    name="campaign_assets",
+    metadata={"hnsw:space": "cosine"}  # Cosine distance
+)
 
 # MiniLM embeddings
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -23,7 +26,16 @@ def embed_and_store(campaign_id: str, text: str, metadata: dict):
         else:
             clean_metadata[key] = value
     
-    vec = model.encode(text).tolist()
+    # Create rich text for embedding that includes message, country, and audience
+    country_name = metadata.get('country_name', '')
+    audience = metadata.get('audience', '')
+    products = metadata.get('products', [])
+    products_str = ', '.join(products) if isinstance(products, list) else str(products)
+    
+    # Concatenate for better semantic search
+    rich_text = f"{text}. Target: {audience} in {country_name}. Products: {products_str}"
+    
+    vec = model.encode(rich_text).tolist()
     collection.add(ids=[campaign_id], embeddings=[vec], metadatas=[clean_metadata], documents=[text])
 
 def search_similar(query: str, top_k: int = 3) -> Dict[str, Any]:

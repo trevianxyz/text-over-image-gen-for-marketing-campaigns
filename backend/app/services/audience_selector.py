@@ -4,15 +4,14 @@ Audience selector service for standardized target audience selection.
 
 from typing import Dict, List, Optional
 from pydantic import BaseModel
-from app.models.campaign import AgeGroup, Gender
 
 class AudienceOption(BaseModel):
     """Represents an audience option for the selector"""
     id: str
     label: str
     description: str
-    age_group: Optional[AgeGroup] = None
-    gender: Optional[Gender] = None
+    age_group: Optional[str] = None
+    gender: Optional[str] = None
     interests: List[str] = []
     category: str  # e.g., "Demographics", "Professions", "Interests"
 
@@ -23,7 +22,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="young_adults",
         label="Young Adults (18-24)",
         description="College students and young professionals",
-        age_group=AgeGroup.group_18_24,
+        age_group="18-24",
         interests=["technology", "social media", "entertainment"],
         category="Demographics"
     ),
@@ -31,7 +30,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="millennials",
         label="Millennials (25-34)",
         description="Early career professionals",
-        age_group=AgeGroup.group_25_34,
+        age_group="25-34",
         interests=["technology", "career", "travel", "fitness"],
         category="Demographics"
     ),
@@ -39,7 +38,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="gen_x",
         label="Gen X (35-44)",
         description="Established professionals and parents",
-        age_group=AgeGroup.group_35_44,
+        age_group="35-44",
         interests=["family", "career", "home improvement", "health"],
         category="Demographics"
     ),
@@ -47,7 +46,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="boomers",
         label="Baby Boomers (45-64)",
         description="Experienced professionals and empty nesters",
-        age_group=AgeGroup.group_45_54,
+        age_group="45-54",
         interests=["retirement planning", "health", "travel", "hobbies"],
         category="Demographics"
     ),
@@ -131,7 +130,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="male_professionals",
         label="Male Professionals",
         description="Working men across various industries",
-        gender=Gender.male,
+        gender="male",
         interests=["career", "technology", "sports", "tools"],
         category="Demographics"
     ),
@@ -139,7 +138,7 @@ AUDIENCE_OPTIONS: List[AudienceOption] = [
         id="female_professionals",
         label="Female Professionals",
         description="Working women across various industries",
-        gender=Gender.female,
+        gender="female",
         interests=["career", "workplace equality", "health", "work-life balance"],
         category="Demographics"
     ),
@@ -180,14 +179,17 @@ def get_audience_selector_data() -> Dict:
             "id": option.id,
             "label": option.label,
             "description": option.description,
-            "age_group": option.age_group.value if option.age_group else None,
-            "gender": option.gender.value if option.gender else None,
+            "age_group": option.age_group,
+            "gender": option.gender,
             "interests": option.interests,
             "category": option.category
         })
     
+    # Convert AUDIENCE_OPTIONS to dict format for JSON serialization
+    audiences_list = [option.model_dump() for option in AUDIENCE_OPTIONS]
+    
     return {
-        "audiences": AUDIENCE_OPTIONS,
+        "audiences": audiences_list,
         "categories": categories,
         "total_count": len(AUDIENCE_OPTIONS)
     }

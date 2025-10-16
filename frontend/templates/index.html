@@ -6,21 +6,25 @@
 <div class="hero">
     <h2>Generate Campaign Creatives</h2>
     <p>AI-powered image generation for Werkr marketing campaigns</p>
-    <div style="margin-top: 1.5rem;">
-        <img src="{{ url_for('assets', path='werkr_brand_image.png') }}" alt="Werkr Logo" style="height:64px;">
+    <div style="margin-top: .2rem;">
+        <img src="{{ url_for('assets', path='werkr_brand_image.png') }}" alt="Werkr Logo" style="height:600px;">
     </div>
-    <div style="margin-top: 1rem; color: green; font-weight: bold;">
+    {# <div style="margin-top: 1rem; color: green; font-weight: bold;">
         [CONFIRMATION: This message is displaying on frontend]
-    </div>
+    </div> #}
 </div>
 
 <div class="form-container">
     <form id="campaignForm">
         <div class="form-group">
             <label for="products">Products *</label>
-            <input type="text" id="products" name="products" 
-                   placeholder="e.g., Running Shoes, Athletic Wear" required>
-            <small>Comma-separated list of products</small>
+            <div class="products-input-container">
+                <div id="productTags" class="product-tags"></div>
+                <input type="text" id="productInput" class="product-input" 
+                       placeholder="Type a product and press Enter..." autocomplete="off">
+            </div>
+            <input type="hidden" id="products" name="products" required>
+            <small>Press Enter after each product name</small>
         </div>
 
         <div class="form-row">
@@ -37,30 +41,32 @@
                     <button type="button" id="clearCountry" class="clear-btn">×</button>
                 </div>
             </div>
-            <small>Start typing to search countries</small>
+            <small>Type a country name... e.g., India, USA, etc.</small>
         </div>
 
             <div class="form-group">
-                <label for="audience">Target Audience *</label>
-                <div class="audience-selector">
-                    <input type="text" id="audienceSearch" placeholder="Search audiences..." autocomplete="off">
-                    <div id="audienceDropdown" class="audience-dropdown" style="display: none;">
-                        <!-- Audiences will be loaded dynamically -->
-                    </div>
-                    <input type="hidden" id="audience" name="audience" required>
-                    <div id="selectedAudience" class="selected-audience" style="display: none;">
-                        <span id="selectedAudienceName"></span>
-                        <button type="button" id="clearAudience" class="clear-btn">×</button>
-                    </div>
-                </div>
-                <small>Start typing to search audiences</small>
+                <label for="profession">Profession *</label>
+                <select id="profession" name="profession" required>
+                    <option value="">Select a profession...</option>
+                    <!-- Professions will be loaded dynamically -->
+                </select>
+                <small>Select the target profession</small>
+            </div>
+
+            <div class="form-group">
+                <label for="demographic">Demographic *</label>
+                <select id="demographic" name="demographic" required>
+                    <option value="">Select a demographic...</option>
+                    <!-- Demographics will be loaded dynamically -->
+                </select>
+                <small>Select the target demographic</small>
             </div>
         </div>
 
         <div class="form-group">
             <label for="message">Campaign Message *</label>
             <textarea id="message" name="message" rows="4" 
-                      placeholder="e.g., Professional athlete running at sunset with determination and strength" required></textarea>
+                      placeholder="e.g., Step onto the site with confidence. WERKR gear keeps you protected, comfortable, and ready for every challenge — from sunrise to the last shift light." required></textarea>
             <small>Be descriptive - this generates your images</small>
         </div>
 
@@ -69,6 +75,46 @@
             <span class="btn-loader" style="display: none;">⏳ Generating...</span>
         </button>
     </form>
+
+    <!-- Progress Bar -->
+    <div id="progressContainer" class="progress-container" style="display: none;">
+        <div class="progress-header">
+            <h4>🎨 Generating Your Campaign</h4>
+            <p id="progressMessage">Initializing...</p>
+        </div>
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+            <span class="progress-percentage" id="progressPercentage">0%</span>
+        </div>
+        <div class="progress-steps">
+            <div class="progress-step" id="step1">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Checking compliance</span>
+            </div>
+            <div class="progress-step" id="step2">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Validating request</span>
+            </div>
+            <div class="progress-step" id="step3">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Generating AI images</span>
+            </div>
+            <div class="progress-step" id="step4">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Translating content</span>
+            </div>
+            <div class="progress-step" id="step5">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Adding brand overlays</span>
+            </div>
+            <div class="progress-step" id="step6">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Finalizing campaign</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="results" class="results-container" style="display: none;">
@@ -80,6 +126,40 @@
         <p><strong>Products:</strong> <span id="productCount"></span></p>
         <p><strong>Region:</strong> <span id="campaignRegion"></span></p>
         <p><strong>Message:</strong> <span id="campaignMessage"></span></p>
+    </div>
+    
+    <div class="metadata-info" id="metadataInfo" style="display: none;">
+        <h4>📊 Generation Metadata</h4>
+        <div class="metadata-grid">
+            <div class="metadata-item">
+                <span class="metadata-label">LLM Model:</span>
+                <span class="metadata-value" id="llmModel"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Prompt Tokens:</span>
+                <span class="metadata-value" id="promptTokens"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Completion Tokens:</span>
+                <span class="metadata-value" id="completionTokens"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Total Tokens:</span>
+                <span class="metadata-value" id="totalTokens"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Total Images:</span>
+                <span class="metadata-value" id="totalImages"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Generated At:</span>
+                <span class="metadata-value" id="generatedAt"></span>
+            </div>
+            <div class="metadata-item metadata-cost">
+                <span class="metadata-label">LLM Cost:</span>
+                <span class="metadata-value" id="costUsd">$0.000000</span>
+            </div>
+        </div>
     </div>
 
     <div id="productsContainer">
@@ -93,6 +173,14 @@
     <h3>❌ Error</h3>
     <p id="errorMessage"></p>
     <button onclick="hideError()" class="btn-secondary">Try Again</button>
+</div>
+
+<!-- Campaign History Section -->
+<div class="history-container">
+    <h3>📜 Campaign History</h3>
+    <div id="campaignHistory" class="campaign-history">
+        <div class="loading-history">Loading campaign history...</div>
+    </div>
 </div>
 {% endblock %}
 

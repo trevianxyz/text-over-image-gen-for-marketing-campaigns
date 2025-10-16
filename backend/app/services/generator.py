@@ -24,13 +24,16 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Brand overlay settings
 BRAND_IMAGE_PATH = Path("frontend/images/werkr_brand_image.png")
-BRAND_OVERLAY_SIZE = (200, 200)  # Size of brand overlay
-BRAND_POSITION = "bottom_right"  # Position of brand overlay
+BRAND_OVERLAY_SIZE = (350, 350)  # Size of brand overlay (increased from 200x200)
+BRAND_POSITION = "top_left"  # Position of brand overlay
 
 # RTL (Right-to-Left) language codes
 RTL_LANGUAGES = {
     'ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ku', 'dv'  # Arabic, Hebrew, Persian, Urdu, Pashto, Sindhi, Kurdish, Dhivehi
 }
+
+# Global variable to store last translation metadata
+_last_translation_metadata = None
 
 def is_rtl_language(language_code: str) -> bool:
     """Check if a language code represents an RTL language"""
@@ -39,6 +42,11 @@ def is_rtl_language(language_code: str) -> bool:
 def get_text_direction(language_code: str) -> str:
     """Get text direction for a language"""
     return 'rtl' if is_rtl_language(language_code) else 'ltr'
+
+def get_last_translation_metadata():
+    """Get the metadata from the last translation operation"""
+    global _last_translation_metadata
+    return _last_translation_metadata
 
 
 def translate_message_with_llm(message: str, region: str, audience: str = None) -> str:
@@ -73,26 +81,78 @@ def translate_message_with_llm(message: str, region: str, audience: str = None) 
                 if audience_info.gender:
                     audience_context += f"Gender: {audience_info.gender.value}. "
 
-        system_prompt = f"""Translate the following marketing message for the workwear brand Werkr into {target_language}, considering the cultural nuances and preferences of the target audience in {country_code}: {audience_context}. Keep it concise and impactful for advertising. Return the translation in {target_language}, no explanations. Include the English translation in the translation as a subtitle to the translation."""
+        system_prompt = f"""
+You are an integrated marketing AI professional working on the global construction work apparel brand WERKR. 
+Your role is to adapt English seed copy into a localized, culturally resonant marketing message.
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system", 
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
-            ],
-            max_tokens=150,
-            temperature=0.3
-        )
+TASK:
+- Rewrite the seed copy into a new, concise, and impactful creative message for a {target_language}-speaking audience.
+- Consider cultural nuances and social preferences of audiences in {country_code}.
+- Context about the audience: {audience_context}.
+
+OUTPUT RULES:
+- Write the final message directly, with no explanations, prefixes, or commentary.
+- If the target language is not English:
+  - First line: the localized message in {target_language}.
+  - Second line: the English translation of that localized message.
+- If the target language is English:
+  - Output only the English message.
+
+The copy must be production-ready and suitable for use in an advertising campaign.
+"""
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
+        except Exception as gpt5_error:
+            print(f"⚠️ GPT-5 model failed: {gpt5_error}. Falling back to gpt-4.1.")
+            response = client.chat.completions.create(
+                model="gpt-4.1",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
 
         translated_message = response.choices[0].message.content.strip()
+        
+        # Extract token usage metadata
+        usage = response.usage
+        token_metadata = {
+            "prompt_tokens": usage.prompt_tokens if usage else 0,
+            "completion_tokens": usage.completion_tokens if usage else 0,
+            "total_tokens": usage.total_tokens if usage else 0,
+            "model": response.model if hasattr(response, 'model') else "unknown"
+        }
+        
         print(f"🌍 Translated '{message}' to {target_language} for audience '{audience}': '{translated_message}'")
+        print(f"📊 Token usage: {token_metadata['total_tokens']} tokens (prompt: {token_metadata['prompt_tokens']}, completion: {token_metadata['completion_tokens']})")
+        
+        # Store metadata globally for later retrieval
+        global _last_translation_metadata
+        _last_translation_metadata = token_metadata
+        
         return translated_message
 
     except Exception as e:
@@ -162,25 +222,51 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
         font_large = None
         font_small = None
         
+        # Determine language and select appropriate font
+        from .country_language import get_legacy_region_mapping, get_primary_language
+        country_code = get_legacy_region_mapping(region) or region
+        language_code = get_primary_language(country_code)
+        
         # List of fonts to try in order of preference (international support)
-        font_paths = [
-            # System fonts with international support
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
-            "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
-            "/System/Library/Fonts/Helvetica.ttc",  # macOS
-            "/System/Library/Fonts/Arial.ttf",      # macOS
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        ]
+        # Prioritize CJK fonts for CJK languages
+        if language_code.lower() in ['japanese', 'chinese', 'korean']:
+            font_paths = [
+                # CJK-specific fonts (must come first for CJK languages)
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf",
+                "/usr/share/fonts/truetype/takao-gothic/TakaoGothic.ttf",
+                "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+                "/System/Library/Fonts/Hiragino Sans GB.ttc",  # macOS
+                # Fallback to general Unicode fonts
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            ]
+        else:
+            font_paths = [
+                # General Unicode fonts for non-CJK languages
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",  # Fallback for mixed content
+                "/System/Library/Fonts/Helvetica.ttc",  # macOS
+                "/System/Library/Fonts/Arial.ttf",      # macOS
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            ]
         
         for font_path in font_paths:
             try:
                 if os.path.exists(font_path):
-                    font_large = ImageFont.truetype(font_path, 28)
-                    font_small = ImageFont.truetype(font_path, 20)
-                    print(f"✅ Using font: {font_path}")
+                    # For .ttc files (TrueType Collections), try index 0
+                    if font_path.endswith('.ttc'):
+                        font_large = ImageFont.truetype(font_path, 48, index=0)
+                        font_small = ImageFont.truetype(font_path, 32, index=0)
+                    else:
+                        font_large = ImageFont.truetype(font_path, 48)
+                        font_small = ImageFont.truetype(font_path, 32)
+                    print(f"✅ Using font for {language_code}: {font_path}")
                     break
             except Exception as e:
                 print(f"⚠️ Font {font_path} failed: {e}")
@@ -214,15 +300,19 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
                 msg_width = len(translated_message) * 12
                 msg_height = 24
 
-            # Position message - adjust for RTL languages
-            if is_rtl:
-                # For RTL languages, position from the right edge
-                msg_x = img.width - msg_width - 30
+            # Position message - ensure it fits within image bounds
+            padding = 30
+            
+            # Ensure text fits within image width
+            if msg_width + (2 * padding) > img.width:
+                # Text is too wide, need to wrap or use smaller position
+                msg_x = padding
             else:
-                # For LTR languages, position from the right edge
-                msg_x = img.width - msg_width - 30
+                # Position from right edge with padding
+                msg_x = img.width - msg_width - padding
                 
-            msg_y = img.height - msg_height - 80 if BRAND_IMAGE_PATH.exists() else img.height - msg_height - 30
+            # Ensure text fits within image height (bottom placement)
+            msg_y = max(img.height - msg_height - padding, padding)
 
             # Add message with outline for visibility
             outline_color = (0, 0, 0, 255)
@@ -253,7 +343,7 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
             # Fallback to generic branding
             region_label = f"Made in {region}"
 
-        # Calculate position for region label (above brand logo)
+        # Calculate position for region label (below brand logo in top left)
         if font_small:
             bbox = draw.textbbox((0, 0), region_label, font=font_small)
             region_width = bbox[2] - bbox[0]
@@ -262,8 +352,13 @@ def add_brand_overlay(image_path: str, product: str, region: str, message: str, 
             region_width = len(region_label) * 8
             region_height = 16
 
-        region_x = x + (brand_img.width - region_width) // 2 if BRAND_IMAGE_PATH.exists() else 20
-        region_y = y - region_height - 10 if BRAND_IMAGE_PATH.exists() else img.height - 50
+        # Position below the brand logo with padding
+        if BRAND_IMAGE_PATH.exists():
+            region_x = x + (brand_img.width - region_width) // 2
+            region_y = y + brand_img.height + 10
+        else:
+            region_x = 20
+            region_y = 20
 
         # Add region label with outline
         for adj in range(-1, 2):

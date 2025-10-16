@@ -27,7 +27,7 @@ Edit `.env` file with your API keys:
 # Required: OpenAI API Key (for LLM translation and fallback image generation)
 OPENAI_API_KEY=sk-proj-your-openai-key-here
 
-# Optional: Hugging Face API Key (for primary image generation)
+# Optional: Hugging Face API Key (for primary image generation; fallback to openai dall-e-3)
 HF_TOKEN=hf_your-huggingface-token-here
 ```
 
@@ -71,20 +71,25 @@ open http://localhost:8080
 - **3 Size Variants**: Square (1:1), Landscape (16:9), Portrait (9:16)
 - **Dual AI Providers**: Hugging Face (primary) + OpenAI DALL-E (fallback)
 - **Smart Fallback**: Automatic failover if primary service is unavailable
+- **Cultural Localization**: Region-specific prompts and cultural adaptation
+- **Brand Overlay**: Automatic Werkr branding with translated text
 
 ### **Localization & Translation**
 
-- **20+ Languages**: Automatic translation to native languages
+- **50+ Countries**: Support for international markets with country-specific localization
+- **RTL Language Support**: Right-to-left text for Arabic, Hebrew, Persian, Urdu
 - **Cultural Context**: Region-specific prompts for better relevance
-- **Brand Overlay**: Werkr logo with localized text
-- **Supported Regions**: US States, International countries
+- **LLM Translation**: GPT-4 powered translation with cultural adaptation
+- **Brand Overlay**: Werkr logo with localized text and regional branding
 
 ### **Enterprise Features**
 
-- **Vector Search**: ChromaDB for campaign similarity
-- **Analytics**: DuckDB for campaign tracking
-- **Compliance**: Automated content validation
+- **Vector Search**: ChromaDB for campaign similarity and content reuse
+- **Analytics**: DuckDB for campaign tracking and performance insights
+- **Compliance**: Automated content validation and safety checks
 - **Persistent Storage**: All data survives container restarts
+- **API Documentation**: Auto-generated OpenAPI/Swagger documentation
+- **Health Monitoring**: Built-in health checks and status endpoints
 
 ## 📁 Project Structure
 
@@ -104,10 +109,13 @@ for-adobe/
 │   ├── templates/           # Jinja2 HTML templates
 │   └── static/             # CSS, JS, images
 ├── assets/                   # Generated content
-│   └── generated/           # Campaign outputs
+│   ├── generated/           # Campaign outputs
+│   ├── inputs/             # Input images and manifests
+│   └── werkr_brand_image.png # Brand logo for overlays
 ├── db/                      # Databases
 │   ├── chroma/             # ChromaDB vector store
 │   └── campaigns.duckdb    # DuckDB analytics
+├── generate_master_manifest.py # Campaign manifest generator
 ├── Dockerfile              # Container configuration
 ├── pyproject.toml          # Python dependencies
 └── .env                    # API keys (create from .env.example)
@@ -347,13 +355,66 @@ services:
 - **Interactive Docs**: http://localhost:8080/docs
 - **OpenAPI Spec**: http://localhost:8080/openapi.json
 - **Health Check**: http://localhost:8080/api/health
+- **Countries API**: http://localhost:8080/api/countries
+- **Audiences API**: http://localhost:8080/api/audiences
+- **Master Manifest**: http://localhost:8080/api/master-manifest
+
+## 🎬 Demo & Learning Resources
+
+### Comprehensive Demo Script
+
+- **📋 Demo Script**: `demo_script.md` - 12-scene narrative demo covering:
+  - FastAPI application architecture
+  - Docker containerization
+  - AI image generation pipeline
+  - Vector search and analytics
+  - Internationalization features
+  - Production deployment considerations
+
+### Key Demo Scenes
+
+1. **Application Startup** - Lifespan management and health checks
+2. **Data Models** - Pydantic validation and type safety
+3. **Campaign Generation** - Complete creative pipeline workflow
+4. **AI Image Generation** - Multi-provider fallback system
+5. **Vector Search** - Semantic search with ChromaDB
+6. **Database Analytics** - Campaign logging with DuckDB
+7. **Docker Setup** - Multi-stage builds with international fonts
+8. **Container Orchestration** - Production deployment
+9. **Internationalization** - 50+ countries with cultural adaptation
+10. **API Documentation** - Interactive Swagger UI
+11. **Development Workflow** - Hot reloading and testing
+12. **Production Deployment** - Scalability and monitoring
+
+## 🛠️ Development Tools
+
+### Master Manifest Generation
+
+```bash
+# Generate master manifest of all campaigns
+python generate_master_manifest.py
+
+# Access via API
+curl http://localhost:8080/api/master-manifest
+```
+
+### Testing & Validation
+
+```bash
+# Run test suite
+python -m pytest
+
+# Test specific components
+python test_country_selector_final.py
+python test_server_routes.py
+```
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly with the demo script
 5. Submit a pull request
 
 ## 📄 License
@@ -362,4 +423,15 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Need help?** Check the logs first: `docker logs adobe-fastapi-container`
+**Need help?**
+
+- Check the logs first: `docker logs adobe-fastapi-container`
+- Follow the demo script: `demo_script.md`
+- Review API docs: http://localhost:8080/docs
+
+<!-- Hard stop and rebuild docker container.
+Stop. Remove. Build. Run.  -->
+
+```bash
+docker stop adobe-fastapi-container && docker rm adobe-fastapi-container && docker build -t adobe-fastapi-app . && docker run -d -p 8080:80 --name adobe-fastapi-container -v "$(pwd)/assets:/app/assets" -v "$(pwd)/db:/app/db" -v "$(pwd)/.env:/app/.env" adobe-fastapi-app
+```

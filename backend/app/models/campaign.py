@@ -48,5 +48,6 @@ class CampaignBrief(BaseModel):
 
 class GenerationResult(BaseModel):
     campaign_id: str
-    outputs: Dict[str, str]   # aspect_ratio → file path
+    outputs: Dict[str, Dict[str, str]]   # product → (aspect_ratio → file path)
     compliance: Optional[Dict] = None
+    metadata: Optional[Dict] = None  # Token usage and other metadata

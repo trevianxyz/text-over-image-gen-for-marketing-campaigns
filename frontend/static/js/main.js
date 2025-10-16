@@ -4,7 +4,9 @@ let selectedCountry = null;
 
 // Audience selector functionality
 let audiencesData = null;
-let selectedAudience = null;
+
+// Product tags functionality
+let productsList = [];
 
 // Load countries data on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -72,27 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Audiences loaded successfully:', audiencesData);
         console.log(`Loaded ${audiencesData.total_count} audiences`);
         
-        // Show a brief success message
-        const searchInput = document.getElementById('audienceSearch');
-        if (searchInput) {
-            searchInput.placeholder = `Search ${audiencesData.total_count} audiences...`;
-        }
     } catch (error) {
         console.error('Failed to load audiences:', error);
-        
-        // Show user-friendly error message
-        const searchInput = document.getElementById('audienceSearch');
-        if (searchInput) {
-            searchInput.placeholder = 'Error loading audiences - please refresh the page';
-            searchInput.disabled = true;
-        }
-        
-        // Show error in the dropdown
-        const dropdown = document.getElementById('audienceDropdown');
-        if (dropdown) {
-            dropdown.innerHTML = '<div class="no-results">Failed to load audiences. Please refresh the page.</div>';
-            dropdown.style.display = 'block';
-        }
         
         // Fallback: Load a minimal set of audiences for basic functionality
         console.log('Loading fallback audiences...');
@@ -107,6 +90,198 @@ document.addEventListener('DOMContentLoaded', async () => {
             total_count: 5
         };
         console.log('Fallback audiences loaded:', audiencesData);
+    }
+    
+    // Populate profession and demographic dropdowns
+    populateAudienceDropdowns();
+    
+    // Load campaign history
+    loadCampaignHistory();
+});
+
+// Populate profession and demographic dropdowns
+function populateAudienceDropdowns() {
+    if (!audiencesData || !audiencesData.audiences) {
+        console.warn('No audiences data available to populate dropdowns');
+        return;
+    }
+    
+    const professionSelect = document.getElementById('profession');
+    const demographicSelect = document.getElementById('demographic');
+    
+    // Filter professions and demographics
+    const professions = audiencesData.audiences.filter(a => a.category === 'Professions');
+    const demographics = audiencesData.audiences.filter(a => a.category === 'Demographics');
+    
+    // Populate profession dropdown
+    professions.forEach(profession => {
+        const option = document.createElement('option');
+        option.value = profession.id;
+        option.textContent = profession.label;
+        professionSelect.appendChild(option);
+    });
+    
+    // Populate demographic dropdown
+    demographics.forEach(demographic => {
+        const option = document.createElement('option');
+        option.value = demographic.id;
+        option.textContent = demographic.label;
+        demographicSelect.appendChild(option);
+    });
+    
+    console.log(`Populated ${professions.length} professions and ${demographics.length} demographics`);
+}
+
+// Load campaign history from master manifest
+async function loadCampaignHistory() {
+    try {
+        console.log('Loading campaign history from master manifest...');
+        const response = await fetch('/api/master-manifest');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const manifest = await response.json();
+        console.log('Master manifest loaded:', manifest);
+        
+        displayCampaignHistory(manifest);
+    } catch (error) {
+        console.error('Failed to load campaign history:', error);
+        const historyContainer = document.getElementById('campaignHistory');
+        historyContainer.innerHTML = '<div class="no-history"><div class="no-history-icon">📭</div><p>No campaign history available</p></div>';
+    }
+}
+
+function displayCampaignHistory(manifest) {
+    const historyContainer = document.getElementById('campaignHistory');
+    
+    if (!manifest.campaigns || manifest.campaigns.length === 0) {
+        historyContainer.innerHTML = '<div class="no-history"><div class="no-history-icon">📭</div><p>No campaigns yet. Create your first campaign above!</p></div>';
+        return;
+    }
+    
+    // Sort campaigns by timestamp (most recent first)
+    const sortedCampaigns = [...manifest.campaigns].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    // Limit to most recent 10 campaigns
+    const recentCampaigns = sortedCampaigns.slice(0, 10);
+    
+    historyContainer.innerHTML = recentCampaigns.map(campaign => {
+        const timestamp = new Date(campaign.timestamp).toLocaleString();
+        const productCount = Object.keys(campaign.products).length;
+        const productNames = Object.keys(campaign.products);
+        
+        return `
+            <div class="history-item" onclick="viewCampaignDetails('${campaign.campaign_id}')">
+                <div class="history-header">
+                    <span class="history-campaign-id">${campaign.campaign_id.substring(0, 8)}...</span>
+                    <span class="history-timestamp">${timestamp}</span>
+                </div>
+                <div class="history-details">
+                    <div class="history-detail">
+                        <span class="history-detail-label">Region</span>
+                        <span class="history-detail-value">${campaign.region || 'N/A'}</span>
+                    </div>
+                    <div class="history-detail">
+                        <span class="history-detail-label">Audience</span>
+                        <span class="history-detail-value">${campaign.audience || 'N/A'}</span>
+                    </div>
+                    <div class="history-detail">
+                        <span class="history-detail-label">Products</span>
+                        <span class="history-detail-value">${productCount} product${productCount !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="history-detail">
+                        <span class="history-detail-label">Compliance</span>
+                        <span class="history-compliance ${(campaign.compliance_status || 'approved').toLowerCase()}">${campaign.compliance_status || 'Approved'}</span>
+                    </div>
+                </div>
+                <div class="history-products">
+                    ${productNames.map(product => `<span class="history-product-tag">${product}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function viewCampaignDetails(campaignId) {
+    console.log('View campaign details:', campaignId);
+    // TODO: Implement modal or detail view for campaign
+    alert(`Campaign details for ${campaignId} - Feature coming soon!`);
+}
+
+// Product tags functionality
+const productInput = document.getElementById('productInput');
+const productTags = document.getElementById('productTags');
+const productsHidden = document.getElementById('products');
+
+function addProduct(productName) {
+    const trimmed = productName.trim();
+    if (!trimmed) return;
+    
+    // Avoid duplicates
+    if (productsList.includes(trimmed)) {
+        productInput.value = '';
+        return;
+    }
+    
+    // Add to list
+    productsList.push(trimmed);
+    
+    // Create tag element
+    const tag = document.createElement('div');
+    tag.className = 'product-tag';
+    tag.innerHTML = `
+        <span class="tag-text">${trimmed}</span>
+        <span class="tag-remove" data-product="${trimmed}">×</span>
+    `;
+    
+    productTags.appendChild(tag);
+    
+    // Update hidden input
+    productsHidden.value = productsList.join(',');
+    
+    // Clear input
+    productInput.value = '';
+    
+    console.log('Added product:', trimmed, 'Total:', productsList);
+}
+
+function removeProduct(productName) {
+    productsList = productsList.filter(p => p !== productName);
+    productsHidden.value = productsList.join(',');
+    
+    // Remove tag element
+    const tags = productTags.querySelectorAll('.product-tag');
+    tags.forEach(tag => {
+        const tagText = tag.querySelector('.tag-text').textContent;
+        if (tagText === productName) {
+            tag.remove();
+        }
+    });
+    
+    console.log('Removed product:', productName, 'Remaining:', productsList);
+}
+
+// Handle Enter key
+productInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addProduct(productInput.value);
+    } else if (e.key === 'Backspace' && !productInput.value && productsList.length > 0) {
+        // Remove last tag if input is empty and backspace is pressed
+        e.preventDefault();
+        removeProduct(productsList[productsList.length - 1]);
+    }
+});
+
+// Handle tag removal clicks
+productTags.addEventListener('click', (e) => {
+    if (e.target.classList.contains('tag-remove')) {
+        const productName = e.target.getAttribute('data-product');
+        removeProduct(productName);
     }
 });
 
@@ -196,86 +371,6 @@ document.getElementById('clearCountry').addEventListener('click', () => {
 });
 
 // Audience search functionality
-document.getElementById('audienceSearch').addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const dropdown = document.getElementById('audienceDropdown');
-    
-    console.log('Searching audiences for:', query);
-    
-    if (!audiencesData) {
-        console.warn('Audiences data not loaded yet');
-        dropdown.innerHTML = '<div class="no-results">Loading audiences...</div>';
-        dropdown.style.display = 'block';
-        return;
-    }
-    
-    if (query.length < 2) {
-        dropdown.style.display = 'none';
-        return;
-    }
-    
-    const filteredAudiences = audiencesData.audiences.filter(audience => 
-        audience.label.toLowerCase().includes(query) ||
-        audience.description.toLowerCase().includes(query) ||
-        audience.category.toLowerCase().includes(query)
-    );
-    
-    console.log(`Found ${filteredAudiences.length} audiences matching "${query}"`);
-    
-    if (filteredAudiences.length === 0) {
-        dropdown.innerHTML = '<div class="no-results">No audiences found</div>';
-    } else {
-        dropdown.innerHTML = filteredAudiences.map(audience => `
-            <div class="audience-option" data-id="${audience.id}" data-label="${audience.label}">
-                <div class="audience-label">${audience.label}</div>
-                <div class="audience-description">${audience.description}</div>
-                <div class="audience-category">${audience.category}</div>
-            </div>
-        `).join('');
-    }
-    
-    dropdown.style.display = 'block';
-});
-
-// Handle audience option clicks
-document.addEventListener('click', (e) => {
-    if (e.target.closest('.audience-option')) {
-        const option = e.target.closest('.audience-option');
-        const audienceId = option.dataset.id;
-        const audienceLabel = option.dataset.label;
-        
-        selectAudience(audienceId, audienceLabel);
-    } else if (!e.target.closest('.audience-selector')) {
-        // Close dropdown when clicking outside
-        document.getElementById('audienceDropdown').style.display = 'none';
-    }
-});
-
-function selectAudience(id, label) {
-    console.log('Selected audience:', { id, label });
-    selectedAudience = { id, label };
-    
-    // Update hidden input
-    document.getElementById('audience').value = id;
-    
-    // Show selected audience
-    document.getElementById('selectedAudienceName').textContent = label;
-    document.getElementById('selectedAudience').style.display = 'flex';
-    document.getElementById('audienceSearch').style.display = 'none';
-    
-    // Hide dropdown
-    document.getElementById('audienceDropdown').style.display = 'none';
-}
-
-// Clear audience selection
-document.getElementById('clearAudience').addEventListener('click', () => {
-    selectedAudience = null;
-    document.getElementById('audience').value = '';
-    document.getElementById('selectedAudience').style.display = 'none';
-    document.getElementById('audienceSearch').style.display = 'block';
-    document.getElementById('audienceSearch').value = '';
-});
-
 document.getElementById('campaignForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -291,8 +386,12 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         .filter(p => p);
     
     const region = document.getElementById('region').value;
-    const audience = document.getElementById('audience').value;
+    const profession = document.getElementById('profession').value;
+    const demographic = document.getElementById('demographic').value;
     const message = document.getElementById('message').value;
+    
+    // Combine profession and demographic for audience
+    const audience = profession && demographic ? `${profession}_${demographic}` : (profession || demographic);
     
     // Client-side validation
     if (!region) {
@@ -300,8 +399,13 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         return;
     }
     
-    if (!audience) {
-        alert('Please select a target audience');
+    if (!profession) {
+        alert('Please select a profession');
+        return;
+    }
+    
+    if (!demographic) {
+        alert('Please select a demographic');
         return;
     }
     
@@ -333,6 +437,56 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
     document.getElementById('results').style.display = 'none';
     document.getElementById('error').style.display = 'none';
     
+    // Show and initialize progress bar
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressMessage = document.getElementById('progressMessage');
+    
+    progressContainer.style.display = 'block';
+    progressBarFill.style.width = '0%';
+    progressPercentage.textContent = '0%';
+    
+    // Simulate progress updates (since we don't have real-time updates from backend)
+    const steps = [
+        { id: 'step1', message: 'Checking compliance...', progress: 5 },
+        { id: 'step2', message: 'Validating request...', progress: 15 },
+        { id: 'step3', message: 'Generating AI images...', progress: 45 },
+        { id: 'step4', message: 'Translating content...', progress: 65 },
+        { id: 'step5', message: 'Adding brand overlays...', progress: 85 },
+        { id: 'step6', message: 'Finalizing campaign...', progress: 95 }
+    ];
+    
+    let currentStep = 0;
+    
+    function updateProgress() {
+        if (currentStep < steps.length) {
+            const step = steps[currentStep];
+            
+            // Mark previous steps as completed
+            for (let i = 0; i < currentStep; i++) {
+                const prevStep = document.getElementById(steps[i].id);
+                prevStep.classList.remove('active');
+                prevStep.classList.add('completed');
+            }
+            
+            // Mark current step as active
+            const currentStepEl = document.getElementById(step.id);
+            currentStepEl.classList.add('active');
+            
+            // Update progress bar
+            progressBarFill.style.width = step.progress + '%';
+            progressPercentage.textContent = step.progress + '%';
+            progressMessage.textContent = step.message;
+            
+            currentStep++;
+        }
+    }
+    
+    // Start progress simulation
+    updateProgress();
+    const progressInterval = setInterval(updateProgress, 3000); // Update every 3 seconds
+    
     try {
         const response = await fetch('/campaigns/generate', {
             method: 'POST',
@@ -343,6 +497,13 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         });
         
         if (!response.ok) {
+            const errorData = await response.json();
+            
+            // Check if it's a compliance failure
+            if (response.status === 400 && errorData.detail && errorData.detail.compliance) {
+                throw new Error(`Compliance Check Failed: ${errorData.detail.compliance.message}`);
+            }
+            
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
@@ -360,45 +521,100 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         document.getElementById('campaignRegion').textContent = data.region;
         document.getElementById('campaignMessage').textContent = data.message;
         
+        // Display metadata if available
+        if (result.metadata) {
+            document.getElementById('metadataInfo').style.display = 'block';
+            document.getElementById('llmModel').textContent = result.metadata.llm_usage.model || 'N/A';
+            document.getElementById('promptTokens').textContent = result.metadata.llm_usage.prompt_tokens || 0;
+            document.getElementById('completionTokens').textContent = result.metadata.llm_usage.completion_tokens || 0;
+            document.getElementById('totalTokens').textContent = result.metadata.llm_usage.total_tokens || 0;
+            document.getElementById('totalImages').textContent = result.metadata.total_images || 0;
+            
+            // Format timestamp
+            const generatedAt = new Date(result.metadata.generated_at);
+            document.getElementById('generatedAt').textContent = generatedAt.toLocaleString();
+            
+            // Format cost
+            const cost = result.metadata.cost_usd || 0;
+            if (cost < 0.01) {
+                // Show full precision for very small costs
+                document.getElementById('costUsd').textContent = `$${cost.toFixed(6)}`;
+            } else if (cost < 1) {
+                // Show cents for costs under $1
+                document.getElementById('costUsd').textContent = `$${cost.toFixed(4)}`;
+            } else {
+                // Show standard format for larger costs
+                document.getElementById('costUsd').textContent = `$${cost.toFixed(2)}`;
+            }
+        }
+        
         // Create product containers dynamically
         const productsContainer = document.getElementById('productsContainer');
         productsContainer.innerHTML = '';
         
-        // For now, show the first product's images (API returns first product's outputs)
-        // In a full implementation, you'd want to modify the API to return all products
-        const productName = data.products[0] || 'Product';
-        
-        const productDiv = document.createElement('div');
-        productDiv.className = 'product-section';
-        productDiv.innerHTML = `
-            <h4>${productName}</h4>
-            <div class="image-grid">
-                <div class="image-card">
-                    <h5>Square (1:1)</h5>
-                    <img src="/${result.outputs['1:1']}" alt="Square format" loading="lazy">
-                    <p class="image-size">1024 x 1024</p>
+        // Display all products
+        for (const [productName, productOutputs] of Object.entries(result.outputs)) {
+            const productDiv = document.createElement('div');
+            productDiv.className = 'product-section';
+            productDiv.innerHTML = `
+                <h4>${productName}</h4>
+                <div class="image-grid">
+                    <div class="image-card">
+                        <h5>Square (1:1)</h5>
+                        <img src="/${productOutputs['1:1']}" alt="Square format" loading="lazy">
+                        <p class="image-size">1024 x 1024</p>
+                    </div>
+                    <div class="image-card">
+                        <h5>Landscape (16:9)</h5>
+                        <img src="/${productOutputs['16:9']}" alt="Landscape format" loading="lazy">
+                        <p class="image-size">1024 x 576</p>
+                    </div>
+                    <div class="image-card">
+                        <h5>Portrait (9:16)</h5>
+                        <img src="/${productOutputs['9:16']}" alt="Portrait format" loading="lazy">
+                        <p class="image-size">576 x 1024</p>
+                    </div>
                 </div>
-                <div class="image-card">
-                    <h5>Landscape (16:9)</h5>
-                    <img src="/${result.outputs['16:9']}" alt="Landscape format" loading="lazy">
-                    <p class="image-size">1024 x 576</p>
-                </div>
-                <div class="image-card">
-                    <h5>Portrait (9:16)</h5>
-                    <img src="/${result.outputs['9:16']}" alt="Portrait format" loading="lazy">
-                    <p class="image-size">576 x 1024</p>
-                </div>
-            </div>
-        `;
+            `;
+            
+            productsContainer.appendChild(productDiv);
+        }
         
-        productsContainer.appendChild(productDiv);
+        // Complete progress bar
+        clearInterval(progressInterval);
+        progressBarFill.style.width = '100%';
+        progressPercentage.textContent = '100%';
+        progressMessage.textContent = 'Campaign generated successfully!';
         
-        // Show results
-        form.style.display = 'none';
-        document.getElementById('results').style.display = 'block';
+        // Mark all steps as completed
+        steps.forEach(step => {
+            const stepEl = document.getElementById(step.id);
+            stepEl.classList.remove('active');
+            stepEl.classList.add('completed');
+        });
+        
+        // Hide progress after a brief delay and show results
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            form.style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }, 1500);
         
     } catch (error) {
         console.error('Error:', error);
+        
+        // Stop progress updates
+        clearInterval(progressInterval);
+        progressBarFill.style.width = '0%';
+        progressMessage.textContent = 'Error generating campaign';
+        progressContainer.style.display = 'none';
+        
+        // Reset all steps
+        steps.forEach(step => {
+            const stepEl = document.getElementById(step.id);
+            stepEl.classList.remove('active', 'completed');
+        });
+        
         document.getElementById('errorMessage').textContent = 
             error.message || 'Failed to generate campaign. Please try again.';
         document.getElementById('error').style.display = 'block';

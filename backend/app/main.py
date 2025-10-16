@@ -101,3 +101,23 @@ def get_audiences():
     except Exception as e:
         print(f"❌ Error serving audiences data: {e}")
         return {"error": "Failed to load audiences data", "audiences": [], "categories": {}}
+
+@app.get("/api/master-manifest")
+def get_master_manifest():
+    """Get the master manifest containing all campaign data"""
+    try:
+        import json
+        from pathlib import Path
+        
+        manifest_path = Path("assets/generated/master_manifest.json")
+        if not manifest_path.exists():
+            return {"error": "Master manifest not found. Run generate_master_manifest.py first."}
+        
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            manifest = json.load(f)
+        
+        print(f"📋 Serving master manifest with {manifest['manifest_info']['total_campaigns']} campaigns")
+        return manifest
+    except Exception as e:
+        print(f"❌ Error serving master manifest: {e}")
+        return {"error": f"Failed to load master manifest: {e}"}

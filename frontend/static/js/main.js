@@ -239,10 +239,11 @@ function viewCampaignDetails(campaignId) {
     console.log('View campaign details:', campaignId);
     
     // Find the campaign in the stored data
-    const campaign = campaignsData.find(c => c.campaign_id === campaignId);
+    const campaign = campaignsData.campaigns.find(c => c.campaign_id === campaignId);
     
     if (!campaign) {
         alert('Campaign not found');
+        console.error('Campaign not found:', campaignId, 'Available campaigns:', campaignsData.campaigns);
         return;
     }
     

@@ -38,6 +38,9 @@ HF_TOKEN=hf_your-huggingface-token-here
 
 ### 3. Build and Run
 
+NOTE:
+** You must have [Docker Desktop](https://docs.docker.com/desktop/) or a Docker Engine (daemon) running to launch this container. **
+
 ```bash
 # Build the Docker image
 docker build -t adobe-fastapi-app .

@@ -8,6 +8,27 @@ let audiencesData = null;
 // Product tags functionality
 let productsList = [];
 
+// Range slider value updates
+document.addEventListener('DOMContentLoaded', () => {
+    // Guidance scale slider
+    const guidanceScaleSlider = document.getElementById('guidanceScale');
+    const guidanceScaleValue = document.getElementById('guidanceScaleValue');
+    if (guidanceScaleSlider && guidanceScaleValue) {
+        guidanceScaleSlider.addEventListener('input', (e) => {
+            guidanceScaleValue.textContent = e.target.value;
+        });
+    }
+
+    // Inference steps slider
+    const numInferenceStepsSlider = document.getElementById('numInferenceSteps');
+    const numInferenceStepsValue = document.getElementById('numInferenceStepsValue');
+    if (numInferenceStepsSlider && numInferenceStepsValue) {
+        numInferenceStepsSlider.addEventListener('input', (e) => {
+            numInferenceStepsValue.textContent = e.target.value;
+        });
+    }
+});
+
 // Load countries data on page load
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -43,22 +64,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             dropdown.innerHTML = '<div class="no-results">Failed to load countries. Please refresh the page.</div>';
             dropdown.style.display = 'block';
         }
-        
-        // Fallback: Load a minimal set of countries for basic functionality
-        console.log('Loading fallback countries...');
-        countriesData = {
-            countries: [
-                { code: 'US', name: 'United States', primary_language: 'English', region: 'North America' },
-                { code: 'CA', name: 'Canada', primary_language: 'English', region: 'North America' },
-                { code: 'MX', name: 'Mexico', primary_language: 'Spanish', region: 'North America' },
-                { code: 'GB', name: 'United Kingdom', primary_language: 'English', region: 'Europe' },
-                { code: 'DE', name: 'Germany', primary_language: 'German', region: 'Europe' },
-                { code: 'FR', name: 'France', primary_language: 'French', region: 'Europe' },
-                { code: 'JP', name: 'Japan', primary_language: 'Japanese', region: 'Asia Pacific' },
-                { code: 'AU', name: 'Australia', primary_language: 'English', region: 'Asia Pacific' }
-            ]
-        };
-        console.log('Fallback countries loaded:', countriesData);
     }
     
     // Load audiences data
@@ -76,20 +81,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     } catch (error) {
         console.error('Failed to load audiences:', error);
-        
-        // Fallback: Load a minimal set of audiences for basic functionality
-        console.log('Loading fallback audiences...');
-        audiencesData = {
-            audiences: [
-                { id: 'construction_workers', label: 'Construction Workers', description: 'Skilled tradespeople in construction industry', category: 'Professions' },
-                { id: 'healthcare_workers', label: 'Healthcare Workers', description: 'Medical professionals and healthcare staff', category: 'Professions' },
-                { id: 'office_workers', label: 'Office Workers', description: 'Corporate and administrative professionals', category: 'Professions' },
-                { id: 'young_adults', label: 'Young Adults (18-24)', description: 'College students and young professionals', category: 'Demographics' },
-                { id: 'millennials', label: 'Millennials (25-34)', description: 'Early career professionals', category: 'Demographics' }
-            ],
-            total_count: 5
-        };
-        console.log('Fallback audiences loaded:', audiencesData);
     }
     
     // Populate profession and demographic dropdowns
@@ -234,6 +225,20 @@ function displayCampaignHistory(manifest) {
 
 // Store campaigns data globally for modal and template access
 let campaignsData = { campaigns: [] };
+
+// Function to convert technical model names to user-friendly display names
+function getDisplayModelName(modelName) {
+    const modelMap = {
+        'stabilityai/stable-diffusion-xl-base-1.0': 'Stable Diffusion XL',
+        'runwayml/stable-diffusion-v1-5': 'Stable Diffusion v1.5',
+        'CompVis/stable-diffusion-v1-4': 'Stable Diffusion v1.4',
+        'Qwen/Qwen-Image': 'Qwen-Image',
+        'dall-e-3': 'DALL-E 3',
+        'dall-e-2': 'DALL-E 2'
+    };
+    
+    return modelMap[modelName] || modelName;
+}
 
 function viewCampaignDetails(campaignId) {
     console.log('View campaign details:', campaignId);
@@ -552,8 +557,17 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
     const profession = document.getElementById('profession').value;
     const demographic = document.getElementById('demographic').value;
     const message = document.getElementById('message').value;
-    const hfModel = document.getElementById('hfModel').value;
-    const imageQuality = document.getElementById('imageQuality').value;
+    // Image generation model is fixed to Stable Diffusion XL
+    const hfModel = 'stabilityai/stable-diffusion-xl-base-1.0';
+    const imageQuality = 'standard';
+    
+    // Advanced generation parameters
+    const noiseScheduler = document.getElementById('noiseScheduler').value;
+    const unetBackbone = document.getElementById('unetBackbone').value;
+    const vae = document.getElementById('vae').value;
+    const guidanceScale = parseFloat(document.getElementById('guidanceScale').value);
+    const numInferenceSteps = parseInt(document.getElementById('numInferenceSteps').value);
+    const seed = document.getElementById('seed').value ? parseInt(document.getElementById('seed').value) : null;
     
     // Combine profession and demographic for audience
     const audience = profession && demographic ? `${profession}_${demographic}` : (profession || demographic);
@@ -591,7 +605,13 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         audience: audience,
         message: message,
         hf_model: hfModel,
-        image_quality: imageQuality
+        image_quality: imageQuality,
+        noise_scheduler: noiseScheduler,
+        unet_backbone: unetBackbone,
+        vae: vae,
+        guidance_scale: guidanceScale,
+        num_inference_steps: numInferenceSteps,
+        seed: seed
     };
     
     console.log('Form data being submitted:', data);
@@ -609,11 +629,51 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
     const progressBarFill = document.getElementById('progressBarFill');
     const progressPercentage = document.getElementById('progressPercentage');
     const progressMessage = document.getElementById('progressMessage');
+    const progressPreview = document.getElementById('progressPreview');
+    const previewImages = document.getElementById('previewImages');
     
     progressContainer.style.display = 'block';
     progressBarFill.style.width = '0%';
     progressPercentage.textContent = '0%';
+    progressPreview.style.display = 'none';
+    previewImages.innerHTML = '';
     
+    // Function to add preview image
+    function addPreviewImage(product, aspectRatio, imagePath, isLoading = false) {
+        progressPreview.style.display = 'block';
+        
+        const imageItem = document.createElement('div');
+        imageItem.className = 'preview-image-item';
+        imageItem.id = `preview-${product}-${aspectRatio}`;
+        
+        if (isLoading) {
+            imageItem.innerHTML = `
+                <div class="preview-image-loading">
+                    <div class="loading-spinner"></div>
+                    <div>Generating ${aspectRatio}...</div>
+                </div>
+            `;
+        } else {
+            imageItem.innerHTML = `
+                <img src="${imagePath}" alt="${product} ${aspectRatio}" onerror="this.style.display='none'">
+                <div class="preview-image-label">${product} - ${aspectRatio}</div>
+            `;
+        }
+        
+        previewImages.appendChild(imageItem);
+    }
+    
+    // Function to update preview image when loaded
+    function updatePreviewImage(product, aspectRatio, imagePath) {
+        const existingItem = document.getElementById(`preview-${product}-${aspectRatio}`);
+        if (existingItem) {
+            existingItem.innerHTML = `
+                <img src="${imagePath}" alt="${product} ${aspectRatio}" onerror="this.style.display='none'">
+                <div class="preview-image-label">${product} - ${aspectRatio}</div>
+            `;
+        }
+    }
+
     // Simulate progress updates (since we don't have real-time updates from backend)
     const steps = [
         { id: 'step1', message: 'Checking compliance...', progress: 5 },
@@ -640,6 +700,17 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
             // Mark current step as active
             const currentStepEl = document.getElementById(step.id);
             currentStepEl.classList.add('active');
+            
+            // Add loading placeholders for image generation step
+            if (step.id === 'step3' && currentStep === 2) {
+                // Add loading placeholders for each product and aspect ratio
+                products.forEach(product => {
+                    const aspectRatios = ['1:1', '16:9', '9:16'];
+                    aspectRatios.forEach(ratio => {
+                        addPreviewImage(product, ratio, '', true);
+                    });
+                });
+            }
             
             // Update progress bar
             progressBarFill.style.width = step.progress + '%';
@@ -700,7 +771,9 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
             document.getElementById('totalImages').textContent = result.metadata.total_images || 0;
             
             // Image generation metadata
-            document.getElementById('imageGenerationModel').textContent = result.metadata.image_generation?.model || 'N/A';
+            const modelName = result.metadata.image_generation?.model || 'N/A';
+            const displayModelName = getDisplayModelName(modelName);
+            document.getElementById('imageGenerationModel').textContent = displayModelName;
             document.getElementById('imageGenerationProvider').textContent = result.metadata.image_generation?.provider || 'N/A';
             document.getElementById('imageGenerationTime').textContent = result.metadata.image_generation?.generation_time || 'N/A';
             document.getElementById('imageDimensions').textContent = result.metadata.image_generation?.dimensions || 'N/A';
@@ -726,6 +799,13 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         // Create product containers dynamically
         const productsContainer = document.getElementById('productsContainer');
         productsContainer.innerHTML = '';
+        
+        // Update preview images with actual generated images
+        for (const [productName, productOutputs] of Object.entries(result.outputs)) {
+            for (const [aspectRatio, imagePath] of Object.entries(productOutputs)) {
+                updatePreviewImage(productName, aspectRatio, `/${imagePath}`);
+            }
+        }
         
         // Display all products
         for (const [productName, productOutputs] of Object.entries(result.outputs)) {

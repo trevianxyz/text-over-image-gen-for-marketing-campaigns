@@ -14,9 +14,8 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Models
-# HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"  # Primary: Hugging Face
-HF_MODEL = "Qwen/Qwen-Image"
-
+HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"  # Primary: Hugging Face
+# QWEN_MODEL = "Qwen/Qwen-Image"  # Qwen-Image (requires Diffusers) - COMMENTED OUT
 OPENAI_MODEL = "dall-e-3"  # Fallback: OpenAI DALL-E 3
 
 HF_BASE_URL = "https://api-inference.huggingface.co"
@@ -411,7 +410,19 @@ def add_brand_overlay(image_path: str, product: str, country_name: str, message:
     return image_path
 
 
-def generate_with_huggingface(prompt: str, width: int, height: int, model: str = None, quality: str = "standard") -> tuple[bytes, dict]:
+def generate_with_huggingface(
+    prompt: str, 
+    width: int, 
+    height: int, 
+    model: str = None, 
+    quality: str = "standard",
+    noise_scheduler: str = "ddim",
+    unet_backbone: str = "default",
+    vae: str = "default",
+    guidance_scale: float = 7.5,
+    num_inference_steps: int = 30,
+    seed: Optional[int] = None
+) -> tuple[bytes, dict]:
     """Generate image using Hugging Face API"""
     import time
     start_time = time.time()
@@ -422,17 +433,7 @@ def generate_with_huggingface(prompt: str, width: int, height: int, model: str =
     url = f"{HF_BASE_URL}/models/{model_to_use}"
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     
-    # Adjust parameters based on quality setting
-    if quality == "high":
-        num_inference_steps = 50
-        guidance_scale = 7.5
-    elif quality == "fast":
-        num_inference_steps = 20
-        guidance_scale = 7.0
-    else:  # standard
-        num_inference_steps = 30
-        guidance_scale = 7.5
-    
+    # Use advanced parameters (override quality-based settings)
     payload = {
         "inputs": prompt,
         "parameters": {
@@ -440,8 +441,15 @@ def generate_with_huggingface(prompt: str, width: int, height: int, model: str =
             "height": height,
             "num_inference_steps": num_inference_steps,
             "guidance_scale": guidance_scale,
+            "scheduler": noise_scheduler,
+            "unet_backbone": unet_backbone,
+            "vae": vae,
         }
     }
+    
+    # Add seed if provided
+    if seed is not None:
+        payload["parameters"]["seed"] = seed
 
     print(f"🚀 Trying Hugging Face model {model_to_use} with {quality} quality...")
     with httpx.Client(timeout=30) as client:  # Shorter timeout for faster fallback
@@ -460,6 +468,74 @@ def generate_with_huggingface(prompt: str, width: int, height: int, model: str =
         }
 
         return response.content, metadata
+
+
+# COMMENTED OUT - Qwen-Image functionality
+# def generate_with_qwen(prompt: str, width: int, height: int) -> tuple[bytes, dict]:
+#     """Generate image using Qwen-Image via Diffusers"""
+#     import time
+#     start_time = time.time()
+#     
+#     print(f"🎨 Trying Qwen-Image model {QWEN_MODEL}...")
+#     
+#     try:
+#         # Import diffusers and torch
+#         from diffusers import DiffusionPipeline
+#         import torch
+#         
+#         # Check if we have GPU available
+#         if torch.cuda.is_available():
+#             torch_dtype = torch.bfloat16
+#             device = "cuda"
+#         else:
+#             torch_dtype = torch.float32
+#             device = "cpu"
+#         
+#         print(f"🖥️ Using device: {device}")
+#         
+#         # Load the Qwen-Image pipeline
+#         pipe = DiffusionPipeline.from_pretrained(
+#             QWEN_MODEL, 
+#             torch_dtype=torch_dtype,
+#             use_safetensors=True
+#         )
+#         pipe = pipe.to(device)
+#         
+#         # Generate image
+#         result = pipe(
+#             prompt=prompt,
+#             width=width,
+#             height=height,
+#             num_inference_steps=30,
+#             guidance_scale=7.5,
+#             num_images_per_prompt=1
+#         )
+#         
+#         # Convert PIL image to bytes
+#         image = result.images[0]
+#         
+#         # Convert to bytes
+#         import io
+#         img_byte_arr = io.BytesIO()
+#         image.save(img_byte_arr, format='PNG')
+#         image_bytes = img_byte_arr.getvalue()
+#         
+#         generation_time = time.time() - start_time
+#         metadata = {
+#             "model": QWEN_MODEL,
+#             "provider": "Qwen-Image",
+#             "generation_time": f"{generation_time:.2f}s",
+#             "dimensions": f"{width}x{height}",
+#             "device": device,
+#             "inference_steps": 30,
+#             "guidance_scale": 7.5
+#         }
+#         
+#         return image_bytes, metadata
+#         
+#     except Exception as e:
+#         print(f"❌ Qwen-Image generation failed: {e}")
+#         raise e
 
 
 def generate_with_openai(prompt: str, width: int, height: int) -> tuple[bytes, dict]:
@@ -505,7 +581,21 @@ def generate_with_openai(prompt: str, width: int, height: int) -> tuple[bytes, d
         return response.content, metadata
 
 
-def generate_single_image(prompt: str, campaign_id: str, product: str, country_name: str, campaign_dir: Optional[Path] = None, hf_model: str = "Qwen/Qwen-Image", image_quality: str = "standard") -> str:
+def generate_single_image(
+    prompt: str, 
+    campaign_id: str, 
+    product: str, 
+    country_name: str, 
+    campaign_dir: Optional[Path] = None, 
+    hf_model: str = "stabilityai/stable-diffusion-xl-base-1.0", 
+    image_quality: str = "standard",
+    noise_scheduler: str = "ddim",
+    unet_backbone: str = "default",
+    vae: str = "default",
+    guidance_scale: float = 7.5,
+    num_inference_steps: int = 30,
+    seed: Optional[int] = None
+) -> str:
     """
     Generate a single base image using Hugging Face or OpenAI fallback.
     Returns the path to the base image.
@@ -529,9 +619,42 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, country_n
     # Generate base image (use square format for best quality)
     global _last_image_generation_metadata
     
+    # COMMENTED OUT - Qwen-Image logic
+    # if hf_model == "Qwen/Qwen-Image":
+    #     try:
+    #         # Try Qwen-Image first
+    #         image_bytes, metadata = generate_with_qwen(localized_prompt, width=1024, height=1024)
+    #         _last_image_generation_metadata = metadata
+    #         print(f"✅ Qwen-Image generation successful for {product}")
+    #     except Exception as e:
+    #         print(f"⚠️ Qwen-Image failed for {product}: {e}")
+    #         if not OPENAI_API_KEY:
+    #             raise Exception("Qwen-Image failed and no OpenAI API key provided")
+    #         try:
+    #             # Fallback to OpenAI
+    #             image_bytes, metadata = generate_with_openai(localized_prompt, width=1024, height=1024)
+    #             _last_image_generation_metadata = metadata
+    #             print(f"✅ OpenAI fallback successful for {product}")
+    #         except Exception as openai_error:
+    #             raise Exception(f"Both Qwen-Image and OpenAI failed for {product}. Qwen: {e}, OpenAI: {openai_error}")
+    # else:
+    
+    # Use Hugging Face models (Stable Diffusion)
     try:
         # Try Hugging Face first
-        image_bytes, metadata = generate_with_huggingface(localized_prompt, width=1024, height=1024, model=hf_model, quality=image_quality)
+        image_bytes, metadata = generate_with_huggingface(
+            localized_prompt, 
+            width=1024, 
+            height=1024, 
+            model=hf_model, 
+            quality=image_quality,
+            noise_scheduler=noise_scheduler,
+            unet_backbone=unet_backbone,
+            vae=vae,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps,
+            seed=seed
+        )
         _last_image_generation_metadata = metadata
         print(f"✅ Hugging Face generation successful for {product}")
 
@@ -647,8 +770,12 @@ def generate_creatives(
     message: Optional[str] = None,
     campaign_dir: Optional[Path] = None,
     audience: Optional[str] = None,
-    hf_model: str = "Qwen/Qwen-Image",
-    image_quality: str = "standard",
+    noise_scheduler: str = "ddim",
+    unet_backbone: str = "default",
+    vae: str = "default",
+    guidance_scale: float = 7.5,
+    num_inference_steps: int = 30,
+    seed: Optional[int] = None,
 ) -> dict:
     """
     Generate one image and create 3 size variants for a specific product.
@@ -664,8 +791,22 @@ def generate_creatives(
     
     print(f"🎨 Generating creatives for product '{product}' in campaign_dir: {campaign_dir}")
     
-    # Generate the base image for this product
-    base_image_path = generate_single_image(prompt, campaign_id, product, country_name, campaign_dir, hf_model, image_quality)
+    # Generate the base image for this product (using fixed Stable Diffusion XL)
+    base_image_path = generate_single_image(
+        prompt, 
+        campaign_id, 
+        product, 
+        country_name, 
+        campaign_dir, 
+        "stabilityai/stable-diffusion-xl-base-1.0", 
+        "standard",
+        noise_scheduler=noise_scheduler,
+        unet_backbone=unet_backbone,
+        vae=vae,
+        guidance_scale=guidance_scale,
+        num_inference_steps=num_inference_steps,
+        seed=seed
+    )
 
     # Create size variants for this product
     outputs = create_size_variants(base_image_path, campaign_id, product, country_name, message, campaign_dir, audience)

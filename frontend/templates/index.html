@@ -74,19 +74,73 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="hfModel">Image Generation Model *</label>
-                <select id="hfModel" name="hfModel" required>
-                    <option value="Qwen/Qwen-Image">Qwen/Qwen-Image (Default)</option>
-                    <option value="stabilityai/stable-diffusion-xl-base-1.0">Stable Diffusion XL</option>
-                    <option value="runwayml/stable-diffusion-v1-5">Stable Diffusion v1.5</option>
-                    <option value="CompVis/stable-diffusion-v1-4">Stable Diffusion v1.4</option>
-                    <option value="stabilityai/stable-diffusion-2-1">Stable Diffusion 2.1</option>
-                    <option value="stabilityai/stable-diffusion-2-1-base">Stable Diffusion 2.1 Base</option>
+                <label for="noiseScheduler">Noise Scheduler</label>
+                <select id="noiseScheduler" name="noiseScheduler">
+                    <option value="ddpm">DDPM (Denoising Diffusion Probabilistic Models)</option>
+                    <option value="ddim" selected>DDIM (Denoising Diffusion Implicit Models)</option>
+                    <option value="dpm_solver">DPM Solver</option>
+                    <option value="euler">Euler</option>
+                    <option value="euler_ancestral">Euler Ancestral</option>
+                    <option value="heun">Heun</option>
+                    <option value="lms">LMS (Linear Multi-Step)</option>
+                    <option value="pndm">PNDM (Pseudo Numerical methods for Diffusion Models)</option>
                 </select>
-                <small>Choose the AI model for image generation</small>
+                <small>Controls how noise is removed during generation</small>
             </div>
 
             <div class="form-group">
+                <label for="unetBackbone">U-Net Backbone</label>
+                <select id="unetBackbone" name="unetBackbone">
+                    <option value="default" selected>Default (Stable Diffusion XL)</option>
+                    <option value="sd-v1.5">Stable Diffusion v1.5 U-Net</option>
+                    <option value="sd-v2.1">Stable Diffusion v2.1 U-Net</option>
+                    <option value="sdxl">SDXL U-Net</option>
+                </select>
+                <small>Neural network architecture for denoising</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="vae">Variational Auto-Encoder (VAE)</label>
+                <select id="vae" name="vae">
+                    <option value="default" selected>Default (SDXL VAE)</option>
+                    <option value="vae-ft-mse">VAE Fine-tuned MSE</option>
+                    <option value="vae-ft-ema">VAE Fine-tuned EMA</option>
+                    <option value="vae-kl-f8">VAE KL-F8</option>
+                    <option value="vae-kl-f16">VAE KL-F16</option>
+                </select>
+                <small>Controls image encoding/decoding quality</small>
+            </div>
+
+            <div class="form-group">
+                <label for="guidanceScale">Guidance Scale</label>
+                <input type="range" id="guidanceScale" name="guidanceScale" min="1.0" max="20.0" step="0.5" value="7.5">
+                <div class="range-value">
+                    <span id="guidanceScaleValue">7.5</span>
+                </div>
+                <small>How closely to follow the text prompt (1.0 = creative, 20.0 = precise)</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="numInferenceSteps">Inference Steps</label>
+                <input type="range" id="numInferenceSteps" name="numInferenceSteps" min="10" max="100" step="5" value="30">
+                <div class="range-value">
+                    <span id="numInferenceStepsValue">30</span>
+                </div>
+                <small>Number of denoising steps (more = better quality, slower)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="seed">Random Seed</label>
+                <input type="number" id="seed" name="seed" min="0" max="2147483647" placeholder="Random">
+                <small>For reproducible results (leave empty for random)</small>
+            </div>
+        </div>
+
+            {# <div class="form-group">
                 <label for="imageQuality">Image Quality</label>
                 <select id="imageQuality" name="imageQuality">
                     <option value="standard">Standard</option>
@@ -94,7 +148,7 @@
                     <option value="fast">Fast Generation</option>
                 </select>
                 <small>Balance between quality and speed</small>
-            </div>
+            </div> #}
         </div>
 
         <div class="form-group">
@@ -146,6 +200,14 @@
             <div class="progress-step" id="step6">
                 <span class="step-icon">⏳</span>
                 <span class="step-text">Finalizing campaign</span>
+            </div>
+        </div>
+        
+        <!-- Real-time Image Preview -->
+        <div class="progress-preview" id="progressPreview" style="display: none;">
+            <h5>🖼️ Live Preview</h5>
+            <div class="preview-images" id="previewImages">
+                <!-- Images will be added here as they're generated -->
             </div>
         </div>
     </div>

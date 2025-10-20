@@ -76,8 +76,12 @@ def generate_campaign(brief: CampaignBrief):
                 message=brief.message,
                 campaign_dir=campaign_dir,
                 audience=brief.audience,
-                hf_model=brief.hf_model,
-                image_quality=brief.image_quality
+                noise_scheduler=brief.noise_scheduler,
+                unet_backbone=brief.unet_backbone,
+                vae=brief.vae,
+                guidance_scale=brief.guidance_scale,
+                num_inference_steps=brief.num_inference_steps,
+                seed=brief.seed
             )
             all_outputs[product] = product_outputs
 

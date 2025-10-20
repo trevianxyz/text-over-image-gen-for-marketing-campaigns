@@ -7,8 +7,13 @@ class CampaignBrief(BaseModel):
     audience: str  # Keep as string for compatibility with existing code
     message: str
     assets: Optional[List[str]] = None
-    hf_model: Optional[str] = "Qwen/Qwen-Image"  # Default HF model
-    image_quality: Optional[str] = "standard"  # Default quality setting
+    # Advanced generation parameters
+    noise_scheduler: Optional[str] = "ddim"
+    unet_backbone: Optional[str] = "default"
+    vae: Optional[str] = "default"
+    guidance_scale: Optional[float] = 7.5
+    num_inference_steps: Optional[int] = 30
+    seed: Optional[int] = None
     
     @field_validator('country_name')
     @classmethod

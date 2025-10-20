@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from app.models import CampaignBrief, GenerationResult
 from app.services.embeddings import embed_and_store, search_similar
-from app.services.generator import generate_creatives, get_last_translation_metadata
+from app.services.generator import generate_creatives, get_last_translation_metadata, get_last_image_generation_metadata
 from app.services.logging_db import log_campaign
 from app.services.compliance import check_compliance
 
@@ -75,7 +75,9 @@ def generate_campaign(brief: CampaignBrief):
                 country_name=brief.country_name,
                 message=brief.message,
                 campaign_dir=campaign_dir,
-                audience=brief.audience
+                audience=brief.audience,
+                hf_model=brief.hf_model,
+                image_quality=brief.image_quality
             )
             all_outputs[product] = product_outputs
 
@@ -175,8 +177,9 @@ def generate_campaign(brief: CampaignBrief):
         first_product_outputs = list(all_outputs.values())[0] if all_outputs else {}
         log_campaign(campaign_id, brief, first_product_outputs, compliance)
 
-        # Collect metadata (token usage from translations)
+        # Collect metadata (token usage from translations and image generation)
         translation_metadata = get_last_translation_metadata()
+        image_generation_metadata = get_last_image_generation_metadata()
         
         # Calculate cost based on model and token usage
         def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
@@ -218,13 +221,18 @@ def generate_campaign(brief: CampaignBrief):
                 "total_tokens": 0,
                 "model": "none"
             },
+            "image_generation": image_generation_metadata if image_generation_metadata else {
+                "model": "N/A",
+                "provider": "N/A",
+                "generation_time": "N/A",
+                "dimensions": "N/A"
+            },
             "cost_usd": cost
         }
 
         print(f"📁 Campaign artifacts saved to: {campaign_dir}")
         print(f"📊 LLM Token usage: {metadata['llm_usage']}")
         return GenerationResult(campaign_id=campaign_id, outputs=all_outputs, compliance=compliance, metadata=metadata)
-    
     except HTTPException:
         # Re-raise HTTP exceptions (like compliance failures)
         raise
@@ -233,13 +241,13 @@ def generate_campaign(brief: CampaignBrief):
         print(f"❌ Unexpected error during campaign generation: {e}")
         import traceback
         traceback.print_exc()
-        
+
         # Clean up campaign directory if it was created
         if campaign_dir and campaign_dir.exists():
             import shutil
             shutil.rmtree(campaign_dir)
             print(f"🗑️  Cleaned up failed campaign directory: {campaign_dir}")
-        
+
         raise HTTPException(status_code=500, detail={
             "error": "Campaign generation failed",
             "message": str(e),

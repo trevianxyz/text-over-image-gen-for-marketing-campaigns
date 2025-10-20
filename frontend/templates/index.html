@@ -72,6 +72,31 @@
             </div>
         </div>
 
+        <div class="form-row">
+            <div class="form-group">
+                <label for="hfModel">Image Generation Model *</label>
+                <select id="hfModel" name="hfModel" required>
+                    <option value="Qwen/Qwen-Image">Qwen/Qwen-Image (Default)</option>
+                    <option value="stabilityai/stable-diffusion-xl-base-1.0">Stable Diffusion XL</option>
+                    <option value="runwayml/stable-diffusion-v1-5">Stable Diffusion v1.5</option>
+                    <option value="CompVis/stable-diffusion-v1-4">Stable Diffusion v1.4</option>
+                    <option value="stabilityai/stable-diffusion-2-1">Stable Diffusion 2.1</option>
+                    <option value="stabilityai/stable-diffusion-2-1-base">Stable Diffusion 2.1 Base</option>
+                </select>
+                <small>Choose the AI model for image generation</small>
+            </div>
+
+            <div class="form-group">
+                <label for="imageQuality">Image Quality</label>
+                <select id="imageQuality" name="imageQuality">
+                    <option value="standard">Standard</option>
+                    <option value="high">High Quality</option>
+                    <option value="fast">Fast Generation</option>
+                </select>
+                <small>Balance between quality and speed</small>
+            </div>
+        </div>
+
         <div class="form-group">
             <label for="message">Campaign Message *</label>
             <textarea id="message" name="message" rows="4" 
@@ -140,6 +165,23 @@
     <div class="metadata-info" id="metadataInfo" style="display: none;">
         <h4>📊 Generation Metadata</h4>
         <div class="metadata-grid">
+            <div class="metadata-item">
+                <span class="metadata-label">Image Generation Model:</span>
+                <span class="metadata-value" id="imageGenerationModel"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Image Generation Provider:</span>
+                <span class="metadata-value" id="imageGenerationProvider"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Image Generation Time:</span>
+                <span class="metadata-value" id="imageGenerationTime"></span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Image Dimensions:</span>
+                <span class="metadata-value" id="imageDimensions"></span>
+            </div>
+
             <div class="metadata-item">
                 <span class="metadata-label">LLM Model:</span>
                 <span class="metadata-value" id="llmModel"></span>

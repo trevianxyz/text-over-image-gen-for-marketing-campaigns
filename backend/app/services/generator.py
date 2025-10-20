@@ -14,7 +14,9 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Models
-HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"  # Primary: Hugging Face
+# HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"  # Primary: Hugging Face
+HF_MODEL = "Qwen/Qwen-Image"
+
 OPENAI_MODEL = "dall-e-3"  # Fallback: OpenAI DALL-E 3
 
 HF_BASE_URL = "https://api-inference.huggingface.co"
@@ -32,8 +34,9 @@ RTL_LANGUAGES = {
     'ar', 'he', 'fa', 'ur', 'ps', 'sd', 'ku', 'dv'  # Arabic, Hebrew, Persian, Urdu, Pashto, Sindhi, Kurdish, Dhivehi
 }
 
-# Global variable to store last translation metadata
+# Global variables to store metadata
 _last_translation_metadata = None
+_last_image_generation_metadata = None
 
 def is_rtl_language(language_code: str) -> bool:
     """Check if a language code represents an RTL language"""
@@ -47,6 +50,11 @@ def get_last_translation_metadata():
     """Get the metadata from the last translation operation"""
     global _last_translation_metadata
     return _last_translation_metadata
+
+def get_last_image_generation_metadata():
+    """Get the metadata from the last image generation operation"""
+    global _last_image_generation_metadata
+    return _last_image_generation_metadata
 
 
 def translate_message_with_llm(message: str, country_name: str, audience: str = None) -> str:
@@ -403,29 +411,62 @@ def add_brand_overlay(image_path: str, product: str, country_name: str, message:
     return image_path
 
 
-def generate_with_huggingface(prompt: str, width: int, height: int) -> bytes:
+def generate_with_huggingface(prompt: str, width: int, height: int, model: str = None, quality: str = "standard") -> tuple[bytes, dict]:
     """Generate image using Hugging Face API"""
-    url = f"{HF_BASE_URL}/models/{HF_MODEL}"
+    import time
+    start_time = time.time()
+    
+    # Use provided model or fallback to global default
+    model_to_use = model or HF_MODEL
+    
+    url = f"{HF_BASE_URL}/models/{model_to_use}"
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    
+    # Adjust parameters based on quality setting
+    if quality == "high":
+        num_inference_steps = 50
+        guidance_scale = 7.5
+    elif quality == "fast":
+        num_inference_steps = 20
+        guidance_scale = 7.0
+    else:  # standard
+        num_inference_steps = 30
+        guidance_scale = 7.5
+    
     payload = {
         "inputs": prompt,
         "parameters": {
             "width": width,
             "height": height,
-            "num_inference_steps": 30,
-            "guidance_scale": 7.5,
+            "num_inference_steps": num_inference_steps,
+            "guidance_scale": guidance_scale,
         }
     }
 
-    print(f"🚀 Trying Hugging Face model {HF_MODEL}...")
+    print(f"🚀 Trying Hugging Face model {model_to_use} with {quality} quality...")
     with httpx.Client(timeout=30) as client:  # Shorter timeout for faster fallback
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        return response.content
+        
+        generation_time = time.time() - start_time
+        metadata = {
+            "model": model_to_use,
+            "provider": "Hugging Face",
+            "generation_time": f"{generation_time:.2f}s",
+            "dimensions": f"{width}x{height}",
+            "inference_steps": num_inference_steps,
+            "guidance_scale": guidance_scale,
+            "quality": quality
+        }
+
+        return response.content, metadata
 
 
-def generate_with_openai(prompt: str, width: int, height: int) -> bytes:
+def generate_with_openai(prompt: str, width: int, height: int) -> tuple[bytes, dict]:
     """Generate image using OpenAI DALL-E 3"""
+    import time
+    start_time = time.time()
+    
     print(f"🔄 Falling back to OpenAI {OPENAI_MODEL}...")
 
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -451,10 +492,20 @@ def generate_with_openai(prompt: str, width: int, height: int) -> bytes:
     with httpx.Client() as client:
         response = client.get(image_url)
         response.raise_for_status()
-        return response.content
+        
+        generation_time = time.time() - start_time
+        metadata = {
+            "model": OPENAI_MODEL,
+            "provider": "OpenAI",
+            "generation_time": f"{generation_time:.2f}s",
+            "dimensions": size,
+            "quality": "standard"
+        }
+        
+        return response.content, metadata
 
 
-def generate_single_image(prompt: str, campaign_id: str, product: str, country_name: str, campaign_dir: Optional[Path] = None) -> str:
+def generate_single_image(prompt: str, campaign_id: str, product: str, country_name: str, campaign_dir: Optional[Path] = None, hf_model: str = "Qwen/Qwen-Image", image_quality: str = "standard") -> str:
     """
     Generate a single base image using Hugging Face or OpenAI fallback.
     Returns the path to the base image.
@@ -476,9 +527,12 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, country_n
     print(f"🌍 Localized prompt for {country_name}: {localized_prompt}")
 
     # Generate base image (use square format for best quality)
+    global _last_image_generation_metadata
+    
     try:
         # Try Hugging Face first
-        image_bytes = generate_with_huggingface(localized_prompt, width=1024, height=1024)
+        image_bytes, metadata = generate_with_huggingface(localized_prompt, width=1024, height=1024, model=hf_model, quality=image_quality)
+        _last_image_generation_metadata = metadata
         print(f"✅ Hugging Face generation successful for {product}")
 
     except Exception as e:
@@ -489,7 +543,8 @@ def generate_single_image(prompt: str, campaign_id: str, product: str, country_n
 
         try:
             # Fallback to OpenAI
-            image_bytes = generate_with_openai(localized_prompt, width=1024, height=1024)
+            image_bytes, metadata = generate_with_openai(localized_prompt, width=1024, height=1024)
+            _last_image_generation_metadata = metadata
             print(f"✅ OpenAI fallback successful for {product}")
 
         except Exception as openai_error:
@@ -592,6 +647,8 @@ def generate_creatives(
     message: Optional[str] = None,
     campaign_dir: Optional[Path] = None,
     audience: Optional[str] = None,
+    hf_model: str = "Qwen/Qwen-Image",
+    image_quality: str = "standard",
 ) -> dict:
     """
     Generate one image and create 3 size variants for a specific product.
@@ -608,7 +665,7 @@ def generate_creatives(
     print(f"🎨 Generating creatives for product '{product}' in campaign_dir: {campaign_dir}")
     
     # Generate the base image for this product
-    base_image_path = generate_single_image(prompt, campaign_id, product, country_name, campaign_dir)
+    base_image_path = generate_single_image(prompt, campaign_id, product, country_name, campaign_dir, hf_model, image_quality)
 
     # Create size variants for this product
     outputs = create_size_variants(base_image_path, campaign_id, product, country_name, message, campaign_dir, audience)
@@ -617,5 +674,30 @@ def generate_creatives(
 
 
 if __name__ == "__main__":
+    # Test the image generation service directly
+    print("🧪 Testing image generation service...")
+    
     test_prompt = "a hero image for social ad campaign"
-    generate_creatives(test_prompt, width=768, height=512)
+    test_campaign_id = "test_campaign_123"
+    test_product = "Test Product"
+    test_region = "US"
+    test_message = "Test message for overlay"
+    
+    try:
+        # Test single image generation
+        print(f"📸 Generating base image for: {test_prompt}")
+        result = generate_single_image(test_prompt, test_campaign_id, test_product, test_region)
+        print(f"✅ Generated base image: {result}")
+        
+        # Test size variants creation
+        if result and "image_path" in result:
+            print(f"📐 Creating size variants from: {result['image_path']}")
+            variants = create_size_variants(result["image_path"], test_campaign_id, test_product, test_region, test_message)
+            print(f"✅ Created size variants: {variants}")
+        else:
+            print("❌ No base image generated, skipping size variants test")
+            
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        import traceback
+        traceback.print_exc()

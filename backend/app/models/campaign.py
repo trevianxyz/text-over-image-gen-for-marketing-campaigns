@@ -7,6 +7,8 @@ class CampaignBrief(BaseModel):
     audience: str  # Keep as string for compatibility with existing code
     message: str
     assets: Optional[List[str]] = None
+    hf_model: Optional[str] = "Qwen/Qwen-Image"  # Default HF model
+    image_quality: Optional[str] = "standard"  # Default quality setting
     
     @field_validator('country_name')
     @classmethod

@@ -552,6 +552,8 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
     const profession = document.getElementById('profession').value;
     const demographic = document.getElementById('demographic').value;
     const message = document.getElementById('message').value;
+    const hfModel = document.getElementById('hfModel').value;
+    const imageQuality = document.getElementById('imageQuality').value;
     
     // Combine profession and demographic for audience
     const audience = profession && demographic ? `${profession}_${demographic}` : (profession || demographic);
@@ -587,7 +589,9 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         products: products,
         country_name: region,
         audience: audience,
-        message: message
+        message: message,
+        hf_model: hfModel,
+        image_quality: imageQuality
     };
     
     console.log('Form data being submitted:', data);
@@ -687,11 +691,19 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         // Display metadata if available
         if (result.metadata) {
             document.getElementById('metadataInfo').style.display = 'block';
+            
+            // LLM metadata
             document.getElementById('llmModel').textContent = result.metadata.llm_usage.model || 'N/A';
             document.getElementById('promptTokens').textContent = result.metadata.llm_usage.prompt_tokens || 0;
             document.getElementById('completionTokens').textContent = result.metadata.llm_usage.completion_tokens || 0;
             document.getElementById('totalTokens').textContent = result.metadata.llm_usage.total_tokens || 0;
             document.getElementById('totalImages').textContent = result.metadata.total_images || 0;
+            
+            // Image generation metadata
+            document.getElementById('imageGenerationModel').textContent = result.metadata.image_generation?.model || 'N/A';
+            document.getElementById('imageGenerationProvider').textContent = result.metadata.image_generation?.provider || 'N/A';
+            document.getElementById('imageGenerationTime').textContent = result.metadata.image_generation?.generation_time || 'N/A';
+            document.getElementById('imageDimensions').textContent = result.metadata.image_generation?.dimensions || 'N/A';
             
             // Format timestamp
             const generatedAt = new Date(result.metadata.generated_at);

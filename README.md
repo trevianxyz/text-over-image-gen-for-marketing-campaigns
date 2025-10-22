@@ -8,6 +8,10 @@
 - **Git** (for cloning the repository)
 - **API Keys** (Hugging Face and OpenAI - see setup below)
 
+![](assets/inputs/werkr-request-ui.png)
+
+![](assets/inputs/campaign-history-item-ui.png)
+
 ### 1. Clone and Setup
 
 ```bash

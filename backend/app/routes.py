@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 from datetime import datetime
 from pydantic import BaseModel
-from app.models import CampaignBrief, GenerationResult
-from app.services.embeddings import embed_and_store, search_similar
-from app.services.generator import generate_creatives, get_last_translation_metadata, get_last_image_generation_metadata
-from app.services.logging_db import log_campaign
-from app.services.compliance import check_compliance
+from .models import CampaignBrief, GenerationResult
+from .services.embeddings import embed_and_store, search_similar
+from .services.generator import generate_creatives, get_last_translation_metadata, get_last_image_generation_metadata
+from .services.logging_db import log_campaign
+from .services.compliance import check_compliance
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ def generate_campaign(brief: CampaignBrief):
             print(f"🎨 Generating creatives for product: {product}")
             
             # Get country and language information
-            from app.services.country_language import get_legacy_region_mapping, get_primary_language, get_country_by_code
+            from .services.country_language import get_legacy_region_mapping, get_primary_language, get_country_by_code
             country_code = get_legacy_region_mapping(brief.country_name) or brief.country_name
             target_language = get_primary_language(country_code)
             country_info = get_country_by_code(country_code)

@@ -5,8 +5,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app import routes
-from app.services.logging_db import init_db, close_db
+from . import routes
+from .services.logging_db import init_db, close_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -75,7 +75,7 @@ def health_check():
 app.include_router(routes.router, prefix="/campaigns", tags=["campaigns"])
 
 # Add countries endpoint directly to main app
-from app.services.country_language import get_country_selector_data
+from .services.country_language import get_country_selector_data
 
 @app.get("/api/countries")
 def get_countries():
@@ -89,7 +89,7 @@ def get_countries():
         return {"error": "Failed to load countries data", "countries": [], "regions": []}
 
 # Add audience endpoint
-from app.services.audience_selector import get_audience_selector_data
+from .services.audience_selector import get_audience_selector_data
 
 @app.get("/api/audiences")
 def get_audiences():

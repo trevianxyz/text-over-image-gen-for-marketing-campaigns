@@ -19,7 +19,7 @@ class CampaignBrief(BaseModel):
     @classmethod
     def validate_country_name(cls, v):
         """Validate that the country_name is a valid country code or legacy region"""
-        from app.services.country_language import get_country_by_code, get_legacy_region_mapping
+        from ..services.country_language import get_country_by_code, get_legacy_region_mapping
         
         # Check if it's a valid country code
         if get_country_by_code(v):

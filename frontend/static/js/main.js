@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateAudienceDropdowns();
     
     // Load campaign history
+    console.log('🎯 ABOUT TO CALL loadCampaignHistory()');
     loadCampaignHistory();
 });
 
@@ -126,7 +127,7 @@ function populateAudienceDropdowns() {
 // Load campaign history from master manifest
 async function loadCampaignHistory() {
     try {
-        console.log('Loading campaign history from master manifest...');
+        console.log('🚀 LOADING CAMPAIGN HISTORY - FUNCTION CALLED');
         const response = await fetch('/api/master-manifest');
         
         if (!response.ok) {
@@ -145,82 +146,47 @@ async function loadCampaignHistory() {
 }
 
 function displayCampaignHistory(manifest) {
+    console.log('displayCampaignHistory called with manifest:', manifest);
     const historyContainer = document.getElementById('campaignHistory');
+    console.log('historyContainer element:', historyContainer);
     
     if (!manifest.campaigns || manifest.campaigns.length === 0) {
+        console.log('No campaigns found in manifest');
         historyContainer.innerHTML = '<div class="no-history"><div class="no-history-icon">📭</div><p>No campaigns yet. Create your first campaign above!</p></div>';
         return;
     }
     
-    // Sort campaigns by timestamp (most recent first)
-    const sortedCampaigns = [...manifest.campaigns].sort((a, b) => 
-        new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    console.log(`Found ${manifest.campaigns.length} campaigns in manifest`);
     
-    // Limit to most recent 10 campaigns
-    const recentCampaigns = sortedCampaigns.slice(0, 10);
+    // Sort campaigns by created_at date (most recent first)
+    console.log('Before sorting - first campaign:', manifest.campaigns[0]);
+    
+    // Since the backend already sorts by date, we can use the campaigns as-is
+    // But let's add a simple frontend sort to ensure proper ordering
+    const sortedCampaigns = [...manifest.campaigns].sort((a, b) => {
+        const dateA = a.metadata?.generated_at || a.created_at || a.timestamp;
+        const dateB = b.metadata?.generated_at || b.created_at || b.timestamp;
+        
+        console.log('Comparing:', {dateA, dateB});
+        
+        // Simple date comparison
+        const timeA = new Date(dateA).getTime();
+        const timeB = new Date(dateB).getTime();
+        
+        console.log('Times:', {timeA, timeB, result: timeB - timeA});
+        return timeB - timeA; // Newest first
+    });
+    
+    console.log('After sorting - first campaign:', sortedCampaigns[0]);
     
     // Store full manifest globally for modal and template access
     campaignsData = manifest;
+    window.sortedCampaigns = sortedCampaigns;
     
-    historyContainer.innerHTML = recentCampaigns.map(campaign => {
-        // Extract data from nested structure
-        const request = campaign.request || {};
-        const response = campaign.response || {};
-        const metadata = campaign.metadata || {};
-        
-        // Format timestamp - handle both ISO format and YYYYMMDD_HHMMSS format
-        let timestamp;
-        if (metadata.generated_at) {
-            timestamp = new Date(metadata.generated_at).toLocaleString();
-        } else if (campaign.timestamp) {
-            // Parse YYYYMMDD_HHMMSS format
-            const ts = campaign.timestamp;
-            const year = ts.substring(0, 4);
-            const month = ts.substring(4, 6);
-            const day = ts.substring(6, 8);
-            const hour = ts.substring(9, 11);
-            const minute = ts.substring(11, 13);
-            timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}`).toLocaleString();
-        } else {
-            timestamp = 'N/A';
-        }
-        
-        const products = response.outputs || {};
-        const productCount = Object.keys(products).length;
-        const productNames = Object.keys(products);
-        const compliance = response.compliance || {};
-        
-        return `
-            <div class="history-item" onclick="viewCampaignDetails('${campaign.campaign_id}')">
-                <div class="history-header">
-                    <span class="history-campaign-id">${campaign.campaign_id.substring(0, 8)}...</span>
-                    <span class="history-timestamp">${timestamp}</span>
-                </div>
-                <div class="history-details">
-                    <div class="history-detail">
-                        <span class="history-detail-label">Country</span>
-                        <span class="history-detail-value">${request.country_name || request.region || 'N/A'}</span>
-                    </div>
-                    <div class="history-detail">
-                        <span class="history-detail-label">Audience</span>
-                        <span class="history-detail-value">${request.audience || 'N/A'}</span>
-                    </div>
-                    <div class="history-detail">
-                        <span class="history-detail-label">Products</span>
-                        <span class="history-detail-value">${productCount} product${productCount !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div class="history-detail">
-                        <span class="history-detail-label">Compliance</span>
-                        <span class="history-compliance ${(compliance.status || 'approved').toLowerCase()}">${compliance.status || 'Approved'}</span>
-                    </div>
-                </div>
-                <div class="history-products">
-                    ${productNames.map(product => `<span class="history-product-tag">${product}</span>`).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
+    // Display campaigns with pagination
+    displayCampaignsWithPagination(sortedCampaigns);
+    
+    console.log(`Displayed campaigns with pagination`);
 }
 
 // Store campaigns data globally for modal and template access
@@ -1101,6 +1067,209 @@ async function useCampaignTemplate(campaignId) {
     } catch (error) {
         console.error('Error loading campaign template:', error);
         alert(`Failed to load campaign template: ${error.message}`);
+    }
+}
+
+// Sort campaign history based on dropdown selection
+function sortCampaignHistory() {
+    const sortOrder = document.getElementById('sortOrder').value;
+    const campaigns = window.sortedCampaigns || campaignsData?.campaigns || [];
+    
+    console.log('Sorting campaigns by:', sortOrder);
+    
+    let sortedCampaigns;
+    if (sortOrder === 'asc') {
+        // Oldest first
+        sortedCampaigns = [...campaigns].sort((a, b) => {
+            const dateA = a.metadata?.generated_at || a.created_at || a.timestamp;
+            const dateB = b.metadata?.generated_at || b.created_at || b.timestamp;
+            return new Date(dateA).getTime() - new Date(dateB).getTime();
+        });
+    } else {
+        // Newest first (default)
+        sortedCampaigns = [...campaigns].sort((a, b) => {
+            const dateA = a.metadata?.generated_at || a.created_at || a.timestamp;
+            const dateB = b.metadata?.generated_at || b.created_at || b.timestamp;
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
+    }
+    
+    // Store sorted campaigns globally
+    window.sortedCampaigns = sortedCampaigns;
+    
+    // Reset to page 1 when sorting changes
+    currentPage = 1;
+    
+    // Display the sorted campaigns with pagination
+    displayCampaignsWithPagination(sortedCampaigns);
+}
+
+// Pagination variables
+let currentPage = 1;
+const campaignsPerPage = 5; // Show 5 campaigns per page
+
+// Create a campaign history item element
+function createCampaignHistoryItem(campaign) {
+    // Extract data from nested structure
+    const request = campaign.request || {};
+    const response = campaign.response || {};
+    const metadata = campaign.metadata || {};
+    
+    // Format timestamp - handle both ISO format and YYYYMMDD_HHMMSS format
+    let timestamp;
+    if (metadata.generated_at) {
+        timestamp = new Date(metadata.generated_at).toLocaleString();
+    } else if (campaign.timestamp) {
+        // Parse YYYYMMDD_HHMMSS format
+        const ts = campaign.timestamp;
+        const year = ts.substring(0, 4);
+        const month = ts.substring(4, 6);
+        const day = ts.substring(6, 8);
+        const hour = ts.substring(9, 11);
+        const minute = ts.substring(11, 13);
+        timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}`).toLocaleString();
+    } else {
+        timestamp = 'N/A';
+    }
+    
+    const products = response.outputs || {};
+    const productCount = Object.keys(products).length;
+    const productNames = Object.keys(products);
+    const compliance = response.compliance || {};
+    
+    const itemElement = document.createElement('div');
+    itemElement.className = 'history-item';
+    itemElement.onclick = () => viewCampaignDetails(campaign.campaign_id);
+    
+    itemElement.innerHTML = `
+        <div class="history-header">
+            <span class="history-campaign-id">${campaign.campaign_id.substring(0, 8)}...</span>
+            <span class="history-timestamp">${timestamp}</span>
+        </div>
+        <div class="history-details">
+            <div class="history-detail">
+                <span class="history-detail-label">Country</span>
+                <span class="history-detail-value">${request.country_name || request.region || 'N/A'}</span>
+            </div>
+            <div class="history-detail">
+                <span class="history-detail-label">Audience</span>
+                <span class="history-detail-value">${request.audience || 'N/A'}</span>
+            </div>
+            <div class="history-detail">
+                <span class="history-detail-label">Products</span>
+                <span class="history-detail-value">${productCount} product${productCount !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="history-detail">
+                <span class="history-detail-label">Compliance</span>
+                <span class="history-compliance ${(compliance.status || 'approved').toLowerCase()}">${compliance.status || 'Approved'}</span>
+            </div>
+        </div>
+        <div class="history-products">
+            ${productNames.map(product => `<span class="history-product-tag">${product}</span>`).join('')}
+        </div>
+    `;
+    
+    return itemElement;
+}
+
+// Display campaigns in the history container
+function displayCampaigns(campaigns) {
+    const historyContainer = document.getElementById('campaignHistory');
+    historyContainer.innerHTML = '';
+    campaigns.forEach(campaign => {
+        const campaignElement = createCampaignHistoryItem(campaign);
+        historyContainer.appendChild(campaignElement);
+    });
+}
+
+// Display campaigns with pagination
+function displayCampaignsWithPagination(campaigns) {
+    const totalCampaigns = campaigns.length;
+    const totalPages = Math.ceil(totalCampaigns / campaignsPerPage);
+    
+    // Reset to page 1 if current page is beyond total pages
+    if (currentPage > totalPages) {
+        currentPage = 1;
+    }
+    
+    // Calculate start and end indices for current page
+    const startIndex = (currentPage - 1) * campaignsPerPage;
+    const endIndex = Math.min(startIndex + campaignsPerPage, totalCampaigns);
+    
+    // Get campaigns for current page
+    const pageCampaigns = campaigns.slice(startIndex, endIndex);
+    
+    // Display campaigns
+    displayCampaigns(pageCampaigns);
+    
+    // Update pagination controls
+    updatePaginationControls(totalCampaigns, totalPages);
+}
+
+// Update pagination controls
+function updatePaginationControls(totalCampaigns, totalPages) {
+    const paginationContainer = document.getElementById('paginationContainer');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
+    const pageNumbers = document.getElementById('pageNumbers');
+    
+    // Show pagination if there are multiple pages
+    if (totalPages > 1) {
+        paginationContainer.style.display = 'block';
+    } else {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    // Update pagination info
+    const startIndex = (currentPage - 1) * campaignsPerPage + 1;
+    const endIndex = Math.min(currentPage * campaignsPerPage, totalCampaigns);
+    paginationInfo.textContent = `Showing ${startIndex}-${endIndex} of ${totalCampaigns} campaigns`;
+    
+    // Update previous/next buttons
+    prevButton.disabled = currentPage === 1;
+    nextButton.disabled = currentPage === totalPages;
+    
+    // Update page numbers
+    pageNumbers.innerHTML = '';
+    
+    // Show page numbers (max 5 visible)
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Add page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('span');
+        pageButton.className = `page-number ${i === currentPage ? 'active' : ''}`;
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToPage(i);
+        pageNumbers.appendChild(pageButton);
+    }
+}
+
+// Go to specific page
+function goToPage(page) {
+    currentPage = page;
+    const campaigns = window.sortedCampaigns || campaignsData?.campaigns || [];
+    displayCampaignsWithPagination(campaigns);
+}
+
+// Change page (previous/next)
+function changePage(direction) {
+    const campaigns = window.sortedCampaigns || campaignsData?.campaigns || [];
+    const totalPages = Math.ceil(campaigns.length / campaignsPerPage);
+    
+    const newPage = currentPage + direction;
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        displayCampaignsWithPagination(campaigns);
     }
 }
 

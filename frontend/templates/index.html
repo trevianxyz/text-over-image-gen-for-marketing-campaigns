@@ -290,9 +290,30 @@
 
 <!-- Campaign History Section -->
 <div class="history-container">
-    <h3>📜 Campaign History</h3>
+    <div class="history-header">
+        <h3>📜 Campaign History</h3>
+        <div class="history-sort">
+            <label for="sortOrder">Sort by date:</label>
+            <select id="sortOrder" onchange="sortCampaignHistory()">
+                <option value="desc" selected>Newest first</option>
+                <option value="asc">Oldest first</option>
+            </select>
+        </div>
+    </div>
     <div id="campaignHistory" class="campaign-history">
         <div class="loading-history">Loading campaign history...</div>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div class="pagination-container" id="paginationContainer" style="display: none;">
+        <div class="pagination-info">
+            <span id="paginationInfo">Showing 1-10 of 7 campaigns</span>
+        </div>
+        <div class="pagination-controls">
+            <button id="prevPage" class="pagination-btn" onclick="changePage(-1)" disabled>← Previous</button>
+            <span id="pageNumbers" class="page-numbers"></span>
+            <button id="nextPage" class="pagination-btn" onclick="changePage(1)">Next →</button>
+        </div>
     </div>
 </div>
 
